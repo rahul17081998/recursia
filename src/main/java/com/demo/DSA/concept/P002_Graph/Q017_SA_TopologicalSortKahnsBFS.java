@@ -1,6 +1,9 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 /**
  * Q017. Topological Sort (Kahn's Algorithm - BFS)
@@ -61,6 +64,7 @@ public class Q017_SA_TopologicalSortKahnsBFS {
      * enqueue any neighbor whose in-degree drops to 0. This naturally
      * produces an order where every vertex is only output once all of
      * its prerequisites have been.
+     * <pre>
      * <p>
      * Target Time Complexity: O(V + E) - every vertex and edge processed
      * once.
@@ -68,7 +72,43 @@ public class Q017_SA_TopologicalSortKahnsBFS {
      * Target Space Complexity: O(V) - in-degree array, queue, and result.
      */
     public List<Integer> topoSort(int V, List<List<Integer>> adj) {
-        // TODO: implement
-        return null;
+        /**
+         * find the inDegree of each node
+         * Create a queue and
+         * initially insert the nodes having inDegree 0
+         * Pick each node from queue and visit the neighbour and reduce the inDegree of the neighbour by 1
+         * if inDegree[neighbour]==0 then put that node into queue
+         * if you put all the vertex in queue mean no cycle
+         */
+
+        int[] inDegree = new int[V];
+        for(List<Integer> ListOfVertex: adj){
+            for(Integer u: ListOfVertex){
+                inDegree[u]++;
+            }
+        }
+
+        Queue<Integer> q = new LinkedList<>();
+        for(int i=0; i<V; i++){
+            if(inDegree[i]==0)
+                q.offer(i);
+        }
+
+        List<Integer> ans = new ArrayList<>();
+
+        int nodeInQueue=0;
+        while(!q.isEmpty()){
+            int u=q.poll();
+            ans.add(u);
+            for(Integer v: adj.get(u)){
+                inDegree[v]--;
+                if(inDegree[v]==0) q.offer(v);
+            }
+            nodeInQueue++;
+        }
+
+        System.out.println("Cycle exist in the directed Graph: "+(nodeInQueue!=V));
+        return ans;
+
     }
 }
