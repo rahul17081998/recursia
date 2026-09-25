@@ -1,0 +1,13 @@
+digraph G {
+  graph [nodesep=0.7, ranksep=0.9, size="8,8", ratio=compress, dpi=180];
+  node [shape=circle, style=filled, fillcolor=lightblue, fontsize=14, width=0.7];
+  "w";
+  "e";
+  "r";
+  "t";
+  "f";
+  "w" -> "e";
+  "e" -> "r";
+  "r" -> "t";
+  "t" -> "f";
+}
