@@ -1,6 +1,8 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 /**
  * Q018. Topological Sort (DFS-based)
@@ -67,7 +69,33 @@ public class Q018_SA_TopologicalSortDFS {
      * stack.
      */
     public List<Integer> topoSort(int V, List<List<Integer>> adj) {
-        // TODO: implement
-        return null;
+
+        Stack<Integer> stack = new Stack<>();
+        boolean[] visited = new boolean[V];
+
+        for(int i=0; i<V; i++){
+            if(!visited[i]){
+                dfs(i, adj, stack, visited);
+            }
+        }
+
+        List<Integer> ans = new ArrayList<>();
+        while(!stack.isEmpty()){
+            ans.add(stack.pop());
+        }
+
+        return ans;
+    }
+
+    private void dfs(int node, List<List<Integer>> adj, Stack<Integer> stack, boolean[] visited) {
+        visited[node]=true;
+
+        for(Integer neighbour: adj.get(node)){
+            if(!visited[neighbour])
+                dfs(neighbour, adj, stack, visited);
+        }
+
+        // After visiting all dependency
+        stack.add(node);
     }
 }
