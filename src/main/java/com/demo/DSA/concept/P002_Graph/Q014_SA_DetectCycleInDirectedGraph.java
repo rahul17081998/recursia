@@ -70,6 +70,12 @@ public class Q014_SA_DetectCycleInDirectedGraph {
      */
     public boolean isCyclic(int V, List<List<Integer>> adj) {
 
+        //return DFS(V, adj);
+        return new Q017_SA_TopologicalSortKahnsBFS().topoSort(V, adj).size()!=V;
+
+    }
+
+    private boolean DFS(int V, List<List<Integer>> adj) {
         boolean[] vis = new boolean[V];
         boolean[] onStack = new boolean[V];
         for(int currNode=0; currNode<V; currNode++){
