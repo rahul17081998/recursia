@@ -45,8 +45,37 @@ public class Q007_MaxAreaOfIsland {
      * Target Space Complexity: O(m * n) worst case - BFS queue or DFS
      * recursion stack.
      */
+    int[] dirX={1,-1,0,0};
+    int[] dirY={0,0,1,-1};
+
     public int maxAreaOfIsland(int[][] grid) {
-        // TODO: implement
-        return 0;
+        int n=grid.length;
+        int m=grid[0].length;
+
+        int maxArea=0;
+        for(int i=0; i<n; i++){
+            for(int j=0; j<m; j++){
+                if(grid[i][j]==1){
+                    maxArea=Math.max(maxArea, getAreaDfs(i,j,grid,n,m));
+                }
+            }
+        }
+        return maxArea;
+    }
+
+    private int getAreaDfs(int i, int j, int[][] grid, int n, int m) {
+        if(grid[i][j]==-1 || grid[i][j]==0) return 0;
+
+        grid[i][j]=-1;
+        int area=1;
+
+        for(int c=0; c<4; c++){
+            int newX=dirX[c]+i;
+            int newY=dirY[c]+j;
+            if(newX<0 || newX>=n || newY<0 || newY>=m ) continue;
+            area +=getAreaDfs(newX, newY, grid, n, m);
+        }
+
+        return area;
     }
 }

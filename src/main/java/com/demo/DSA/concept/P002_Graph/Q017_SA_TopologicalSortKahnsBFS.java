@@ -96,7 +96,6 @@ public class Q017_SA_TopologicalSortKahnsBFS {
 
         List<Integer> ans = new ArrayList<>();
 
-        int nodeInQueue=0;
         while(!q.isEmpty()){
             int u=q.poll();
             ans.add(u);
@@ -104,10 +103,8 @@ public class Q017_SA_TopologicalSortKahnsBFS {
                 inDegree[v]--;
                 if(inDegree[v]==0) q.offer(v);
             }
-            nodeInQueue++;
         }
 
-        System.out.println("Cycle exist in the directed Graph: "+(nodeInQueue!=V));
         return ans;
 
     }

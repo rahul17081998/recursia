@@ -1,5 +1,8 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Q016. Course Schedule II
  * https://leetcode.com/problems/course-schedule-ii/
@@ -43,7 +46,18 @@ public class Q016_CourseScheduleII {
      * array, and queue.
      */
     public int[] findOrder(int numCourses, int[][] prerequisites) {
-        // TODO: implement
-        return new int[0];
+        List<List<Integer>> adj = new ArrayList<>();
+        for(int i=0; i<numCourses; i++) adj.add(new ArrayList<>());
+        for(int[] edge: prerequisites){
+            int u=edge[1], v=edge[0];
+            adj.get(u).add(v);
+        }
+
+        Q017_SA_TopologicalSortKahnsBFS khansAlgo = new Q017_SA_TopologicalSortKahnsBFS();
+        List<Integer> finishedCourceList = khansAlgo.topoSort(numCourses, adj);
+        return finishedCourceList.size()==numCourses?finishedCourceList
+                .stream()
+                .mapToInt(Integer::intValue)
+                .toArray(): new int[0];
     }
 }

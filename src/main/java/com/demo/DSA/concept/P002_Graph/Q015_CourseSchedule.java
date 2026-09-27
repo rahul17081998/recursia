@@ -1,5 +1,8 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Q015. Course Schedule
  * https://leetcode.com/problems/course-schedule/
@@ -46,6 +49,18 @@ public class Q015_CourseSchedule {
      */
     public boolean canFinish(int numCourses, int[][] prerequisites) {
         // TODO: implement
-        return false;
+        // use topological sort
+        List<List<Integer>> adj = new ArrayList<>();
+        for(int i=0; i<numCourses; i++){
+            adj.add(new ArrayList<>());
+        }
+
+        for(int[] edge: prerequisites){
+            int u=edge[1];
+            int v=edge[0];
+            adj.get(u).add(v);
+        }
+
+        return new Q017_SA_TopologicalSortKahnsBFS().topoSort(numCourses, adj).size()==numCourses;
     }
 }

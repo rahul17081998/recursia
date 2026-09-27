@@ -15,10 +15,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import com.demo.DSA.concept.QuestionDriverSupport.QuestionRunner;
+
+import static com.demo.DSA.concept.QuestionDriverSupport.assertUnorderedInts;
+import static com.demo.DSA.concept.QuestionDriverSupport.header;
+import static com.demo.DSA.concept.QuestionDriverSupport.runFromArgs;
+import static com.demo.DSA.concept.QuestionDriverSupport.toExecutables;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -88,22 +93,6 @@ public class GraphMain {
     private static final File OUT_DIR = new File("graph-output");
     private static final String ENGINE = "neato";
 
-    @FunctionalInterface
-    private interface QuestionRunner {
-        void run() throws IOException;
-    }
-
-    /** A per-example check method, e.g. {@code this::q003_NumberOfProvinces}. */
-    @FunctionalInterface
-    private interface CaseCheck<T> {
-        void check(T example) throws Throwable;
-    }
-
-    /** Turns a stream of example rows + the method that checks one row into assertAll(...)-ready Executables. */
-    private static <T> Executable[] toExecutables(Stream<T> cases, CaseCheck<T> checker) {
-        return cases.map(c -> (Executable) () -> checker.check(c)).toArray(Executable[]::new);
-    }
-
     // JUnit @Test/@ParameterizedTest methods must be instance (non-static)
     // methods, so the qXXX_..._all() methods below are instance methods and
     // this map is built from bound `this::` references once main() creates a
@@ -129,6 +118,7 @@ public class GraphMain {
         questions.put(16, this::q016_CourseScheduleII_all);
         questions.put(17, this::q017_TopologicalSortKahnsBFS_all);
         questions.put(18, this::q018_TopologicalSortDFS_all);
+        questions.put(48, this::q048_FindEventualSafeStates_all); // kept near topo sort in run order; see the Q048 section right after Q018 below
         questions.put(19, this::q019_IsGraphBipartite_all);
         questions.put(20, this::q020_NumberOfConnectedComponents_all);
         questions.put(21, this::q021_WordLadder_all);
@@ -162,42 +152,7 @@ public class GraphMain {
 
     public static void main(String[] args) {
         OUT_DIR.mkdirs();
-        GraphMain app = new GraphMain();
-
-        Map<Integer, QuestionRunner> toRun = new LinkedHashMap<>();
-        if (args.length == 0) {
-            toRun.putAll(app.questions);
-        } else {
-            for (String arg : args) {
-                String digits = arg.replaceAll("[^0-9]", "");
-                Integer qNum = digits.isEmpty() ? null : Integer.parseInt(digits);
-                QuestionRunner runner = qNum == null ? null : app.questions.get(qNum);
-                if (runner == null) {
-                    System.out.println("Skipping unknown question arg \"" + arg + "\" (expected 1-" + app.questions.size() + ")");
-                    continue;
-                }
-                toRun.put(qNum, runner);
-            }
-        }
-
-        // A failing assertion (or any other error) in one question must not stop
-        // the rest from running - catch per-question so every requested question
-        // gets a verdict, then report which ones failed at the end.
-        List<Integer> failed = new ArrayList<>();
-        for (Map.Entry<Integer, QuestionRunner> entry : toRun.entrySet()) {
-            try {
-                entry.getValue().run();
-            } catch (Throwable t) {
-                failed.add(entry.getKey());
-                System.out.println("*** Q" + String.format("%03d", entry.getKey()) + " FAILED: "
-                        + t.getClass().getSimpleName() + (t.getMessage() != null ? " - " + t.getMessage() : ""));
-            }
-        }
-
-        if (toRun.size() > 1) {
-            System.out.println("\n=== " + (toRun.size() - failed.size()) + "/" + toRun.size() + " questions passed"
-                    + (failed.isEmpty() ? "" : " (failed: " + failed + ")") + " ===");
-        }
+        runFromArgs(args, new GraphMain().questions);
     }
 
     // =========================================================================
@@ -791,6 +746,43 @@ public class GraphMain {
     private void q018_TopologicalSortDFS_all() {
         header(Q018_SA_TopologicalSortDFS.class);
         assertAll("Q018_TopologicalSortDFS", toExecutables(topoCases(), this::q018_TopologicalSortDFS));
+    }
+
+    // =========================================================================
+    // Q048 - Find Eventual Safe States (kept here, next to topo sort, even
+    // though its class file is numbered 48 - see GraphMain's constructor)
+    // =========================================================================
+
+    private record Case048(String variant, int[][] graph, List<Integer> expected) {
+        @Override
+        public String toString() {
+            return "Example " + variant;
+        }
+    }
+
+    private static Stream<Case048> q048Cases() {
+        return Stream.of(
+                new Case048("A", new int[][]{{1, 2}, {2, 3}, {5}, {0}, {5}, {}, {}}, List.of(2, 4, 5, 6)),
+                new Case048("B", new int[][]{{1, 2, 3, 4}, {1, 2}, {3, 4}, {0, 4}, {}}, List.of(4)),
+                new Case048("C", new int[][]{{}, {0, 2, 3, 4}, {3}, {4}, {}}, List.of(0, 1, 2, 3, 4)),
+                new Case048("D", new int[][]{{}, {2}, {3}, {2}}, List.of(0))
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("q048Cases")
+    void q048_FindEventualSafeStates(Case048 c) throws IOException {
+        Q048_FindEventualSafeStates q = new Q048_FindEventualSafeStates();
+        System.out.println(c + ": graph=" + Arrays.deepToString(c.graph()));
+        List<Integer> actual = q.eventualSafeNodes(c.graph());
+        System.out.println("eventualSafeNodes -> " + actual);
+        render(Q048_FindEventualSafeStates.class, c.variant(), c.graph().length, toEdgesFromAdjArray(c.graph()), true, false);
+        assertEquals(c.expected(), actual, c.toString());
+    }
+
+    private void q048_FindEventualSafeStates_all() {
+        header(Q048_FindEventualSafeStates.class);
+        assertAll("Q048_FindEventualSafeStates", toExecutables(q048Cases(), this::q048_FindEventualSafeStates));
     }
 
     // =========================================================================
@@ -1809,10 +1801,6 @@ public class GraphMain {
     // shared helpers
     // =========================================================================
 
-    private static void header(Class<?> qClass) {
-        System.out.println("\n=== " + qClass.getSimpleName() + " ===");
-    }
-
     private static List<List<Integer>> adj(int v, int[][] edges, boolean directed) {
         return GraphUtil.buildAdjacencyList(v, edges, directed);
     }
@@ -1893,15 +1881,6 @@ public class GraphMain {
 
     private static void assert2D(char[][] expected, char[][] actual, String what) {
         assertEquals(Arrays.deepToString(expected), actual == null ? "null" : Arrays.deepToString(actual), what);
-    }
-
-    private static void assertUnorderedInts(List<Integer> expected, List<Integer> actual, String what) {
-        assertNotNull(actual, what + " was null");
-        List<Integer> e = new ArrayList<>(expected);
-        List<Integer> a = new ArrayList<>(actual);
-        e.sort(null);
-        a.sort(null);
-        assertEquals(e, a, what);
     }
 
     private static void assertUnorderedListOfLists(List<List<Integer>> expected, List<List<Integer>> actual, String what) {

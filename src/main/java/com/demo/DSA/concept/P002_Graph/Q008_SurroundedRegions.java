@@ -1,5 +1,7 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.*;
+
 /**
  * Q008. Surrounded Regions
  * https://leetcode.com/problems/surrounded-regions/
@@ -41,6 +43,7 @@ package com.demo.DSA.concept.P002_Graph;
 public class Q008_SurroundedRegions {
 
     /**
+     *
      * @implNote TODO: implement.
      * Target approach: Reverse the problem - instead of finding enclosed
      * regions, find the regions that are NOT captured (those connected to
@@ -55,7 +58,51 @@ public class Q008_SurroundedRegions {
      * Target Space Complexity: O(m * n) worst case - BFS queue or DFS
      * recursion stack.
      */
+
+    int[] dirX={1,-1,0,0};
+    int[] dirY={0,0,-1,1};
     public void solve(char[][] board) {
         // TODO: implement
+
+        int n=board.length;
+        int m=board[0].length;
+        if(n==1 || m==1) return;
+
+        for(int row=0; row<n; row++){
+            for(int col=0; col<m; col++){
+                if((row==0 || row==n-1 || col==0 || col==m-1) && board[row][col]=='O'){
+                    System.out.println("i and j : "+row+col+" value is :"+board[row][col]);
+                    bfsMarkZeroRegion(row,col,board, n, m);
+                }
+            }
+        }
+
+        for(int row=0; row<n; row++){
+            for(int col=0; col<m; col++){
+                if(board[row][col]=='O'){
+                    board[row][col]='X';
+                }else if(board[row][col]=='Z'){
+                    board[row][col]='O';
+                }
+            }
+        }
+    }
+
+    private void bfsMarkZeroRegion(int row, int col, char[][] board, int n, int m) {
+        Queue<List<Integer>> q = new LinkedList<>();
+        q.offer(new ArrayList<>(Arrays.asList(row,col)));
+        board[row][col]='Z'; // visited
+
+        while(!q.isEmpty()){
+            List<Integer>coordinate = q.poll();
+            for(int d=0; d<4; d++){
+                int newRow=dirX[d]+coordinate.get(0);
+                int newCol=dirY[d]+coordinate.get(1);
+                if(newRow<0 || newRow>=n || newCol<0 || newCol>=m || board[newRow][newCol]!='O') continue;
+                q.offer(new ArrayList<>(Arrays.asList(newRow, newCol)));
+                board[newRow][newCol]='Z';
+            }
+        }
+
     }
 }
