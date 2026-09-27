@@ -1,0 +1,18 @@
+digraph G {
+  graph [nodesep=0.7, ranksep=0.9, size="8,8", ratio=compress, dpi=180];
+  node [shape=circle, style=filled, fillcolor=lightblue, fontsize=14, width=0.7];
+  "yeast";
+  "flour";
+  "meat";
+  "lettuce";
+  "bread";
+  "sandwich";
+  "salad";
+  "dressing";
+  "yeast" -> "bread";
+  "flour" -> "bread";
+  "bread" -> "sandwich";
+  "meat" -> "sandwich";
+  "lettuce" -> "salad";
+  "dressing" -> "salad";
+}
