@@ -1,6 +1,8 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 /**
  * Q002. DFS Traversal of Graph
@@ -63,7 +65,21 @@ public class Q002_SA_DFSTraversalOfGraph {
      * plus visited array plus output list.
      */
     public List<Integer> dfsOfGraph(int V, List<List<Integer>> adj) {
-        // TODO: implement
-        return null;
+        boolean[] vis = new boolean[V];
+        List<Integer> stack=new Stack<>();
+        dfs(0, adj, vis, stack);
+
+        return stack;
+    }
+
+    private void dfs(int node, List<List<Integer>> adj, boolean[] vis, List<Integer> stack) {
+        vis[node]=true;
+        stack.add(node);
+        for(Integer neighbour: adj.get(node)){
+            if(!vis[neighbour]){
+                dfs(neighbour, adj, vis, stack);
+            }
+        }
+
     }
 }

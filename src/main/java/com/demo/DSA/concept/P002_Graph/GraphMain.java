@@ -118,7 +118,8 @@ public class GraphMain {
         questions.put(16, this::q016_CourseScheduleII_all);
         questions.put(17, this::q017_TopologicalSortKahnsBFS_all);
         questions.put(18, this::q018_TopologicalSortDFS_all);
-        questions.put(48, this::q048_FindEventualSafeStates_all); // kept near topo sort in run order; see the Q048 section right after Q018 below
+        questions.put(48, this::q048_FindEventualSafeStates_all); // kept near topo sort in run order; see the Q048/Q049 sections right after Q018 below
+        questions.put(49, this::q049_FindAllPossibleRecipesFromGivenSupplies_all);
         questions.put(19, this::q019_IsGraphBipartite_all);
         questions.put(20, this::q020_NumberOfConnectedComponents_all);
         questions.put(21, this::q021_WordLadder_all);
@@ -783,6 +784,73 @@ public class GraphMain {
     private void q048_FindEventualSafeStates_all() {
         header(Q048_FindEventualSafeStates.class);
         assertAll("Q048_FindEventualSafeStates", toExecutables(q048Cases(), this::q048_FindEventualSafeStates));
+    }
+
+    // =========================================================================
+    // Q049 - Find All Possible Recipes from Given Supplies (kept here, next
+    // to topo sort, even though its class file is numbered 49 - see
+    // GraphMain's constructor)
+    // =========================================================================
+
+    private record Case049(String variant, String[] recipes, List<List<String>> ingredients, String[] supplies, List<String> expected) {
+        @Override
+        public String toString() {
+            return "Example " + variant;
+        }
+    }
+
+    private static Stream<Case049> q049Cases() {
+        return Stream.of(
+                new Case049("A", new String[]{"bread"},
+                        List.of(List.of("yeast", "flour")),
+                        new String[]{"yeast", "flour", "corn"},
+                        List.of("bread")),
+                new Case049("B", new String[]{"bread", "sandwich"},
+                        List.of(List.of("yeast", "flour"), List.of("bread", "meat")),
+                        new String[]{"yeast", "flour", "meat"},
+                        List.of("bread", "sandwich")),
+                new Case049("C", new String[]{"bread", "sandwich", "burger"},
+                        List.of(List.of("yeast", "flour"), List.of("bread", "meat"), List.of("sandwich", "meat", "bread")),
+                        new String[]{"yeast", "flour", "meat"},
+                        List.of("bread", "sandwich", "burger")),
+                // "salad" needs "dressing", which is neither a supply nor any recipe - unreachable,
+                // so it's correctly left out of the answer (not an error case).
+                new Case049("D", new String[]{"bread", "sandwich", "salad"},
+                        List.of(List.of("yeast", "flour"), List.of("bread", "meat"), List.of("lettuce", "dressing")),
+                        new String[]{"yeast", "flour", "meat", "lettuce"},
+                        List.of("bread", "sandwich"))
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("q049Cases")
+    void q049_FindAllPossibleRecipesFromGivenSupplies(Case049 c) throws IOException {
+        Q049_FindAllPossibleRecipesFromGivenSupplies q = new Q049_FindAllPossibleRecipesFromGivenSupplies();
+        System.out.println(c + ": recipes=" + Arrays.toString(c.recipes()) + ", ingredients=" + c.ingredients()
+                + ", supplies=" + Arrays.toString(c.supplies()));
+        List<String> actual = q.findAllRecipes(c.recipes(), c.ingredients(), c.supplies());
+        System.out.println("findAllRecipes -> " + actual);
+
+        // Render: nodes = every recipe + every distinct ingredient/supply name; edges = ingredient -> recipe.
+        Set<String> nodes = new LinkedHashSet<>(Arrays.asList(c.supplies()));
+        nodes.addAll(Arrays.asList(c.recipes()));
+        List<String[]> edgeList = new ArrayList<>();
+        for (int i = 0; i < c.recipes().length; i++) {
+            for (String ingredient : c.ingredients().get(i)) {
+                nodes.add(ingredient);
+                edgeList.add(new String[]{ingredient, c.recipes()[i]});
+            }
+        }
+        renderLabeled(Q049_FindAllPossibleRecipesFromGivenSupplies.class, c.variant(),
+                nodes.toArray(new String[0]), edgeList.toArray(new String[0][]), true, false);
+
+        assertUnorderedStrings(c.expected(), actual, c.toString());
+    }
+
+    private void q049_FindAllPossibleRecipesFromGivenSupplies_all() {
+        header(Q049_FindAllPossibleRecipesFromGivenSupplies.class);
+        assertAll("Q049_FindAllPossibleRecipesFromGivenSupplies",
+                toExecutables(q049Cases(), this::q049_FindAllPossibleRecipesFromGivenSupplies));
     }
 
     // =========================================================================
@@ -1884,6 +1952,11 @@ public class GraphMain {
     }
 
     private static void assertUnorderedListOfLists(List<List<Integer>> expected, List<List<Integer>> actual, String what) {
+        assertNotNull(actual, what + " was null");
+        assertEquals(new HashSet<>(expected), new HashSet<>(actual), what);
+    }
+
+    private static void assertUnorderedStrings(List<String> expected, List<String> actual, String what) {
         assertNotNull(actual, what + " was null");
         assertEquals(new HashSet<>(expected), new HashSet<>(actual), what);
     }

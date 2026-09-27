@@ -101,38 +101,30 @@ public class Q049_FindAllPossibleRecipesFromGivenSupplies {
      * Target Space Complexity: O(n + total ingredients length) - the
      * name-to-index map, adjacency list, and in-degree array.
      */
-    Set<String> suppliesList = new HashSet<>();
-    Set<String> recipeList = new HashSet<>();
     public List<String> findAllRecipes(String[] recipes, List<List<String>> ingredients, String[] supplies) {
 
+        Set<String> suppliesList = new HashSet<>(Arrays.asList(supplies));
+        Set<String> recipeList = new HashSet<>(Arrays.asList(recipes));
 
-        // filter the recipes
-        for(String supply: supplies) suppliesList.add(supply);
-        for(String recipe: recipes) recipeList.add(recipe);
-        List<String> filteredRecipe = new ArrayList<>();
-        for(int i=0 ;i< ingredients.size(); i++){
-            List<String> ingredient = ingredients.get(i);
-            for(String ing: ingredient){
-                if(suppliesList.contains(ing) || recipeList.contains(ing)){
-                    filteredRecipe.add(recipes[i]);
-                }
+        Set<String> allNames = new LinkedHashSet<>(recipeList);
+
+        for (List<String> ingredientList : ingredients) {
+            for (String ing : ingredientList) {
+                if (!suppliesList.contains(ing) && !recipeList.contains(ing)) allNames.add(ing); // either recipe or something which is unknown
             }
         }
 
-        int V = filteredRecipe.size();
-        String[] filterRecipeList = new String[V];
-        for(int i=0; i<V; i++){
-            filterRecipeList[i]=filteredRecipe.get(i);
+        int V = allNames.size();
+        Map<String, Integer> stringIntegerMap = new HashMap<>();
+        Map<Integer, String> integerStringMap = new HashMap<>();
+        int idx = 0;
+        for (String name : allNames) {
+            stringIntegerMap.put(name, idx);
+            integerStringMap.put(idx, name);
+            idx++;
         }
 
-
-        List<List<String>> edgesStr=getEdgeGraph(filterRecipeList, ingredients, supplies);
-        Map<String, Integer> stringIntegerMap=new HashMap<>();
-        Map<Integer,String> integerStringMap=new HashMap<>();
-        for(int i=0; i<V; i++){
-            stringIntegerMap.put(filterRecipeList[i], i);
-            integerStringMap.put(i,filterRecipeList[i]);
-        }
+        List<List<String>> edgesStr = getEdgeGraph(recipes, ingredients, suppliesList, recipeList);
 
         List<List<Integer>> adj = new ArrayList<>();
         for(int i=0; i<V; i++) adj.add(new ArrayList<>());
@@ -147,30 +139,27 @@ public class Q049_FindAllPossibleRecipesFromGivenSupplies {
 
         List<String> recipesOrderList = new ArrayList<>();
         for(Integer i: recipesOrder){
-            recipesOrderList.add(integerStringMap.get(i));
+            String name = integerStringMap.get(i);
+            // skipping non-recipe/non-supply item?
+            if (recipeList.contains(name)) recipesOrderList.add(name);
         }
         return recipesOrderList;
     }
 
-    private List<List<String>> getEdgeGraph(String[] recipes, List<List<String>> ingredients, String[] supplies) {
+    private List<List<String>> getEdgeGraph(String[] recipes, List<List<String>> ingredients, Set<String> suppliesList, Set<String> recipeList) {
 
         List<List<String>> edges=new ArrayList<>();
 
-        for(int i=0; i< ingredients.size(); i++){
+        for(int i=0; i< recipes.length; i++){
             String v = recipes[i];
-            boolean skipThisRecipe=false;
             for(String ing: ingredients.get(i)){
-                if(!suppliesList.contains(ing) && !recipeList.contains(ing)){
-                    skipThisRecipe=true;
-                    edges.add(new ArrayList<>(Arrays.asList(ing, v)));
-                }
-            }
+                if (suppliesList.contains(ing)) continue; // trivially available, no edge needed
 
-            if(!skipThisRecipe){
-                for(String ing: ingredients.get(i)){
-                    if(!suppliesList.contains(ing)){
-                        edges.add(new ArrayList<>(Arrays.asList(ing, v)));
-                    }
+                edges.add(new ArrayList<>(Arrays.asList(ing, v)));
+                if (!recipeList.contains(ing)) {
+                    // ing is neither a supply nor a recipe, so it can never be produced.
+                    // A self-loop keeps its in-degree above 0 forever, so Kahn's BFS never treats it as "ready" - correctly blocking anything that depends on it.
+                    edges.add(new ArrayList<>(Arrays.asList(ing, ing)));
                 }
             }
         }

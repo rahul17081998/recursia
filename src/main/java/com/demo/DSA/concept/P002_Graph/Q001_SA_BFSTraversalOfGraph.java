@@ -1,6 +1,9 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 /**
  * Q001. BFS Traversal of Graph
@@ -67,7 +70,26 @@ public class Q001_SA_BFSTraversalOfGraph {
      * output list.
      */
     public List<Integer> bfsOfGraph(int V, List<List<Integer>> adj) {
-        // TODO: implement
-        return null;
+        boolean[] vis=new boolean[V];
+        List<Integer> ans = new ArrayList<>();
+        bfs(0,adj, vis, ans,V);
+        return ans;
+    }
+
+    private void bfs(int i, List<List<Integer>> adj, boolean[] vis, List<Integer> ans, int v) {
+        vis[i]=true;
+        Queue<Integer> q = new LinkedList<>();
+        q.offer(i);
+
+        while(!q.isEmpty()){
+            int node = q.poll();
+            ans.add(node);
+            for(Integer neighbour: adj.get(node)){
+                if(!vis[neighbour]){
+                    q.offer(neighbour);
+                    vis[neighbour]=true;
+                }
+            }
+        }
     }
 }
