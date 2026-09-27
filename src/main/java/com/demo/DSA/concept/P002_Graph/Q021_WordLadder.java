@@ -1,6 +1,6 @@
 package com.demo.DSA.concept.P002_Graph;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * Q021. Word Ladder
@@ -36,6 +36,14 @@ import java.util.List;
  */
 public class Q021_WordLadder {
 
+    public static class NodeDetails{
+        int walk;
+        int vertex;
+        NodeDetails(int vertex, int walk){
+            this.vertex=vertex;
+            this.walk=walk;
+        }
+    }
     /**
      * @implNote TODO: implement.
      * Target approach: Treat each word as a graph node, with an implicit
@@ -54,7 +62,91 @@ public class Q021_WordLadder {
      * Target Space Complexity: O(N * L) - the word set plus BFS queue.
      */
     public int ladderLength(String beginWord, String endWord, List<String> wordList) {
-        // TODO: implement
+        if(beginWord.equals(endWord)) return 1;
+        Set<String> wordSet = new LinkedHashSet<>();
+        wordSet.add(beginWord);
+        for(String word: wordList){
+            if(!wordSet.contains(word))wordSet.add(word);
+        }
+        if(!wordSet.contains(endWord)) return 0;
+        int V = wordSet.size();
+
+        List<List<String>> edgesStr = getAllValidEdges(wordSet);
+
+
+        Map<String, Integer> stringIntegerMap = new HashMap<>();
+        Map<Integer, String> integerStringMap = new HashMap<>();
+        int idx = 0;
+        for (String word : wordSet) {
+            stringIntegerMap.put(word, idx);
+            integerStringMap.put(idx, word);
+            idx++;
+        }
+
+        List<List<Integer>> adj = new ArrayList<>();
+        for(int i=0; i<V; i++) adj.add(new ArrayList<>());
+        for(List<String> edge: edgesStr){
+            int u=stringIntegerMap.get(edge.get(0));
+            int v=stringIntegerMap.get(edge.get(1));
+            adj.get(u).add(v);
+            adj.get(v).add(u);
+        }
+
+        return solve(stringIntegerMap.get(beginWord), stringIntegerMap.get(endWord), adj, V);
+    }
+
+    private List<List<String>> getAllValidEdges(Set<String> wordSet) {
+        List<List<String>> edges = new ArrayList<>();
+
+        List<String> allWords = new ArrayList<>();
+        for(String w: wordSet){
+            allWords.add(w);
+        }
+        //System.out.println("--> all words are: "+allWords);
+
+        for(int i=0; i< allWords.size(); i++){
+            for(int j=i+1; j< allWords.size(); j++){
+                String word1 = allWords.get(i);
+                String word2 = allWords.get(j);
+                if(charDifferenceIsOne(word1, word2)){
+                    edges.add(new ArrayList<>(Arrays.asList(word1, word2)));// it will cover both direction
+                }
+            }
+        }
+
+        //System.out.println("-----all edges are : "+edges);
+
+        return edges;
+    }
+
+    private boolean charDifferenceIsOne(String word1, String word2) {
+        int dif=0;
+        for(int i=0; i<Math.min(word1.length(), word2.length()); i++){
+            if(word1.charAt(i)!=word2.charAt(i)) dif++;
+        }
+
+        //System.out.println("word1= "+word1+"  word2= "+word2+" diff="+dif);
+        return dif==1;
+    }
+
+    private int solve(Integer startNode, Integer endNode, List<List<Integer>> adj, int V) {
+        Queue<NodeDetails> q= new LinkedList<>();
+        boolean[] vis = new boolean[V];
+
+        q.offer(new NodeDetails(startNode, 0));
+
+        while(!q.isEmpty()){
+            NodeDetails curr = q.poll();
+            if(curr.vertex==endNode) return curr.walk+1;
+            for(Integer neighbour: adj.get(curr.vertex)){
+                if(!vis[neighbour]){
+                    q.offer(new NodeDetails(neighbour, curr.walk+1));
+                    vis[neighbour]=true;
+                }
+            }
+        }
+
         return 0;
+
     }
 }

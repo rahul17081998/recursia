@@ -1,5 +1,10 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+
 /**
  * Q020. Number of Connected Components in an Undirected Graph
  * https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/
@@ -39,7 +44,38 @@ public class Q020_NumberOfConnectedComponents {
      * visited/queue structures (or the DSU parent array).
      */
     public int countComponents(int n, int[][] edges) {
-        // TODO: implement
-        return 0;
+        List<List<Integer>> adj = new ArrayList<>();
+        for(int i=0; i<n; i++) adj.add(new ArrayList<>());
+
+        for(var edge: edges){
+            adj.get(edge[0]).add(edge[1]);
+            adj.get(edge[1]).add(edge[0]);
+        }
+        boolean[] vis =new boolean[n];
+
+        int count=0;
+        for(int i=0; i<n; i++){
+            if(!vis[i]){
+                bfs_MarkComponent(i, adj, vis);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private void bfs_MarkComponent(int i, List<List<Integer>> adj, boolean[] vis) {
+        vis[i]=true;
+        Queue<Integer> q = new LinkedList<>();
+        q.offer(i);
+
+        while(!q.isEmpty()){
+            Integer node = q.poll();
+            for(Integer neighbour: adj.get(node)){
+                if(!vis[neighbour]){
+                    q.offer(neighbour);
+                    vis[neighbour]=true;
+                }
+            }
+        }
     }
 }
