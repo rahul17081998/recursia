@@ -1,5 +1,7 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.*;
+
 /**
  * Q025. Dijkstra's Algorithm - Shortest Path
  * https://www.geeksforgeeks.org/problems/implementing-dijkstra-set-1-adjacency-matrix/1
@@ -61,6 +63,32 @@ package com.demo.DSA.concept.P002_Graph;
 public class Q025_SA_DijkstraShortestPath {
 
     /**
+     * One entry in the adjacency list = one edge.
+     * node -> the neighbour vertex (other end of the edge)
+     * wt   -> weight (cost) of this single edge
+     */
+    public static class Pair {
+        int node; int wt;
+        Pair(int node, int wt) {
+            this.node = node;
+            this.wt = wt;
+        }
+    }
+
+    /**
+     * One entry in the priority queue = a candidate shortest path.
+     * node -> the vertex we reached
+     * dist -> TOTAL distance from src to this vertex (not a single edge)
+     */
+    public static class State {
+        int node; int dist;
+        State(int node, int dist) {
+            this.node = node;
+            this.dist = dist;
+        }
+    }
+
+    /**
      * @implNote TODO: implement.
      * Target approach: Initialize dist[] to infinity except dist[src]=0.
      * Use a min-heap (PriorityQueue) of {distance, vertex} pairs, seeded
@@ -75,7 +103,53 @@ public class Q025_SA_DijkstraShortestPath {
      * heap.
      */
     public int[] dijkstra(int V, int[][] edges, int src) {
-        // TODO: implement
-        return new int[V];
+
+        // Step 1: build the adjacency list. adj.get(u) = all edges going out of u.
+        List<List<Pair>> adj = new ArrayList<>();
+        for (int i = 0; i < V; i++) adj.add(new ArrayList<>());
+
+        for (int[] edge : edges) {
+            int u = edge[0];
+            int v = edge[1];
+            int wt = edge[2];
+
+            // Undirected graph -> add the edge in both directions
+            adj.get(u).add(new Pair(v, wt));
+            adj.get(v).add(new Pair(u, wt));
+        }
+
+        // Step 2: dist[i] = shortest distance from src to i found so far.
+        // Start with "infinity" everywhere, 0 for the source.
+        int[] dist = new int[V];
+        Arrays.fill(dist, Integer.MAX_VALUE);
+        dist[src] = 0;
+
+        // Step 3: min-heap ordered by total distance -> always gives the closest vertex first
+        PriorityQueue<State> pq = new PriorityQueue<>((a, b) -> Integer.compare(a.dist, b.dist));
+        pq.offer(new State(src, 0));
+
+        while (!pq.isEmpty()) {
+            State curr = pq.poll();
+            int u = curr.node;
+
+            // Stale entry: a shorter path to u was already found and processed -> skip it
+            if (curr.dist > dist[u]) continue;
+
+            // Relax every edge u -> v
+            for (Pair p : adj.get(u)) {
+                int v = p.node;
+                int wt = p.wt;
+
+                // Going through u gives a shorter path to v -> update and push
+                // (no overflow: dist[u] is always finite here, since u was popped)
+                if (dist[v] > dist[u] + wt) {
+                    dist[v] = dist[u] + wt;
+                    pq.offer(new State(v, dist[v]));
+                }
+            }
+        }
+
+        // Unreachable vertices stay Integer.MAX_VALUE
+        return dist;
     }
 }
