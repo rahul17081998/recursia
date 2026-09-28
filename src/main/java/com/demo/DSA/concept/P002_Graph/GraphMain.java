@@ -1111,7 +1111,7 @@ public class GraphMain {
     void q025_DijkstraShortestPath(Case025 c) throws IOException {
         Q025_SA_DijkstraShortestPath q = new Q025_SA_DijkstraShortestPath();
         System.out.println(c + ": V=" + c.v() + ", edges=" + Arrays.deepToString(c.edges()) + ", src=0");
-        int[] actual = q.dijkstra(c.v(), c.edges(), 0);
+        int[] actual = q.dijkstra(c.v(), c.edges(), 0, false);
         System.out.println("dijkstra -> " + Arrays.toString(actual));
         render(Q025_SA_DijkstraShortestPath.class, c.variant(), c.v(), c.edges(), false, true);
         assertArrayEquals(c.expected(), actual, c.toString());

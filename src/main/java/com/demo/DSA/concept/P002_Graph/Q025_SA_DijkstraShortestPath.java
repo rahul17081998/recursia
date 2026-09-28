@@ -97,12 +97,19 @@ public class Q025_SA_DijkstraShortestPath {
      * relax every outgoing edge - if dist[vertex] + weight &lt; dist[neighbor],
      * update dist[neighbor] and push {newDist, neighbor}.
      * <p>
+     * Dijkstra itself doesn't care whether the graph is directed or
+     * undirected - that only affects how the adjacency list is built (add
+     * the reverse edge or don't). {@code directed} controls that; other
+     * questions with a directed weighted graph (e.g.
+     * {@link Q026_NetworkDelayTime}) can call this same method with
+     * {@code directed=true} instead of reimplementing Dijkstra.
+     * <p>
      * Target Time Complexity: O((V + E) log V) with a binary heap.
      * <br>
      * Target Space Complexity: O(V + E) - adjacency list, dist array, and
      * heap.
      */
-    public int[] dijkstra(int V, int[][] edges, int src) {
+    public int[] dijkstra(int V, int[][] edges, int src, boolean directed) {
 
         // Step 1: build the adjacency list. adj.get(u) = all edges going out of u.
         List<List<Pair>> adj = new ArrayList<>();
@@ -113,9 +120,8 @@ public class Q025_SA_DijkstraShortestPath {
             int v = edge[1];
             int wt = edge[2];
 
-            // Undirected graph -> add the edge in both directions
             adj.get(u).add(new Pair(v, wt));
-            adj.get(v).add(new Pair(u, wt));
+            if (!directed) adj.get(v).add(new Pair(u, wt)); // undirected -> add the reverse edge too
         }
 
         // Step 2: dist[i] = shortest distance from src to i found so far.

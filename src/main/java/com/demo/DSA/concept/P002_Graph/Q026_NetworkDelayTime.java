@@ -40,8 +40,9 @@ public class Q026_NetworkDelayTime {
     /**
      * @implNote TODO: implement.
      * Target approach: A direct application of
-     * {@link Q025_SA_DijkstraShortestPath} - run Dijkstra from node k over
-     * the directed weighted graph to get the shortest time to every node.
+     * {@link Q025_SA_DijkstraShortestPath} - reuse its {@code dijkstra}
+     * method (with {@code directed=true}, since a signal travels u-&gt;v
+     * only, not back) to get the shortest time from node k to every node.
      * If any node's distance is still infinity, return -1 (unreachable);
      * otherwise the answer is the maximum distance across all nodes (the
      * time for the LAST node to receive the signal).
@@ -52,7 +53,21 @@ public class Q026_NetworkDelayTime {
      * heap.
      */
     public int networkDelayTime(int[][] times, int n, int k) {
-        // TODO: implement
-        return -1;
+        // Zero-index the vertices without mutating the caller's `times` array.
+        int[][] edges = new int[times.length][3];
+        for (int i = 0; i < times.length; i++) {
+            edges[i][0] = times[i][0] - 1;
+            edges[i][1] = times[i][1] - 1;
+            edges[i][2] = times[i][2];
+        }
+
+        int[] dist = new Q025_SA_DijkstraShortestPath().dijkstra(n, edges, k - 1, true);
+
+        int minTime = 0;
+        for (int i = 0; i < n; i++) {
+            if (dist[i] == Integer.MAX_VALUE) return -1;
+            minTime = Math.max(minTime, dist[i]);
+        }
+        return minTime;
     }
 }
