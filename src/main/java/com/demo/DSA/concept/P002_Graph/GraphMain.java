@@ -1,7 +1,6 @@
 package com.demo.DSA.concept.P002_Graph;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +17,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import com.demo.DSA.concept.QuestionDriverSupport;
 import com.demo.DSA.concept.QuestionDriverSupport.QuestionRunner;
 
 import static com.demo.DSA.concept.QuestionDriverSupport.assertUnorderedInts;
@@ -46,8 +46,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * in Rising Water, ...) aren't naturally a small node-edge diagram, so
  * those are called and printed but not rendered to Graphviz.
  * <p>
- * Rendered files land in ./graph-output/ under the working directory this
- * is run from. Requires Graphviz on PATH (`brew install graphviz`).
+ * Rendered files land in ./output/P002_Graph/ under the working directory
+ * this is run from - a sibling of {@code P003_LinkedList}'s own
+ * ./output/P003_LinkedList/, both under one shared ./output/ root instead
+ * of each package inventing its own top-level folder. Requires Graphviz on
+ * PATH (`brew install graphviz`).
  * <p>
  * <strong>Structure.</strong> Each question's example inputs live as DATA
  * (a small record, one instance per example) rather than as duplicated
@@ -90,7 +93,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class GraphMain {
 
-    private static final File OUT_DIR = new File("graph-output");
+    private static final File OUT_DIR = new File("output/P002_Graph");
     private static final String ENGINE = "neato";
 
     // JUnit @Test/@ParameterizedTest methods must be instance (non-static)
@@ -1915,33 +1918,8 @@ public class GraphMain {
         renderToPng(dot, pngName(qClass, variant));
     }
 
-    /**
-     * Writes DOT source to {@code graph-output/<name>.dot}, then shells out
-     * to Graphviz to render {@code graph-output/<name>.png} alongside it.
-     * This is the standard way to call an external tool like Graphviz from
-     * Java - ProcessBuilder, not a library dependency.
-     */
     private static void renderToPng(String dotSource, String name) throws IOException {
-        File dotFile = new File(OUT_DIR, name + ".dot");
-        try (FileWriter fw = new FileWriter(dotFile)) {
-            fw.write(dotSource);
-        }
-
-        File pngFile = new File(OUT_DIR, name + ".png");
-        ProcessBuilder pb = new ProcessBuilder(ENGINE, "-Tpng", dotFile.getPath(), "-o", pngFile.getPath());
-        pb.redirectErrorStream(true);
-        try {
-            Process process = pb.start();
-            process.getInputStream().transferTo(System.out);
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                System.out.println("`" + ENGINE + "` exited with code " + exitCode
-                        + " - is Graphviz installed and on PATH? (brew install graphviz)");
-            }
-        } catch (IOException | InterruptedException e) {
-            System.out.println("Could not run `" + ENGINE + "` (" + e.getMessage()
-                    + "). Render it yourself: " + ENGINE + " -Tpng " + dotFile.getPath() + " -o " + pngFile.getPath());
-        }
+        QuestionDriverSupport.renderToPng(OUT_DIR, ENGINE, dotSource, name);
     }
 
     // =========================================================================

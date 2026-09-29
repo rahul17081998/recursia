@@ -1,0 +1,6 @@
+digraph G {
+  rankdir=LR;
+  graph [nodesep=0.5, ranksep=0.7, size="10,4", dpi=180];
+  node [shape=box, style=filled, fillcolor=lightblue, fontsize=16];
+  n0 [label="5"];
+}

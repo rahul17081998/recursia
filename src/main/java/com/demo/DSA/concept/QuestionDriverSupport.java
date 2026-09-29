@@ -1,5 +1,8 @@
 package com.demo.DSA.concept;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -96,5 +99,37 @@ public final class QuestionDriverSupport {
         e.sort(null);
         a.sort(null);
         assertEquals(e, a, what);
+    }
+
+    /**
+     * Writes DOT source to {@code <outDir>/<name>.dot}, then shells out to
+     * Graphviz ({@code engine -Tpng ...}) to render {@code <outDir>/<name>.png}
+     * alongside it. Shared by every package driver that visualizes its input
+     * (see {@code P002_Graph.GraphMain}, {@code P003_LinkedList.LinkedListMain}) -
+     * this is the standard way to call an external tool like Graphviz from
+     * Java (ProcessBuilder, not a library dependency), so each driver only
+     * needs to supply its own DOT-source generator.
+     */
+    public static void renderToPng(File outDir, String engine, String dotSource, String name) throws IOException {
+        File dotFile = new File(outDir, name + ".dot");
+        try (FileWriter fw = new FileWriter(dotFile)) {
+            fw.write(dotSource);
+        }
+
+        File pngFile = new File(outDir, name + ".png");
+        ProcessBuilder pb = new ProcessBuilder(engine, "-Tpng", dotFile.getPath(), "-o", pngFile.getPath());
+        pb.redirectErrorStream(true);
+        try {
+            Process process = pb.start();
+            process.getInputStream().transferTo(System.out);
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                System.out.println("`" + engine + "` exited with code " + exitCode
+                        + " - is Graphviz installed and on PATH? (brew install graphviz)");
+            }
+        } catch (IOException | InterruptedException e) {
+            System.out.println("Could not run `" + engine + "` (" + e.getMessage()
+                    + "). Render it yourself: " + engine + " -Tpng " + dotFile.getPath() + " -o " + pngFile.getPath());
+        }
     }
 }
