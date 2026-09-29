@@ -1308,7 +1308,11 @@ public class GraphMain {
                         {12, 13, 14, 15, 16},
                         {11, 17, 18, 19, 20},
                         {10, 9, 8, 7, 6}
-                }, 16)
+                }, 16),
+                // answer is the HIGHEST cell on the path (0->5->1->2->3 => 5), not the sum of climbs (7)
+                new Case031("C", new int[][]{{0, 5, 1}, {8, 7, 2}, {6, 4, 3}}, 5),
+                // going downhill doesn't make the next climb free: best path must wait for 7, not 6
+                new Case031("D", new int[][]{{3, 2, 1}, {6, 5, 8}, {4, 0, 7}}, 7)
         );
     }
 
