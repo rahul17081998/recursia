@@ -1,5 +1,7 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.PriorityQueue;
+
 /**
  * Q031. Swim in Rising Water
  * https://leetcode.com/problems/swim-in-rising-water/
@@ -50,8 +52,43 @@ public class Q031_SwimInRisingWater {
      * <br>
      * Target Space Complexity: O(n^2) - visited grid plus heap.
      */
+    int[] dirX = {1, -1, 0, 0};
+    int[] dirY = {0, 0, 1, -1};
     public int swimInWater(int[][] grid) {
-        // TODO: implement
-        return 0;
+        int n = grid.length;
+
+        int[][] dist = new int[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                dist[i][j] = Integer.MAX_VALUE;
+            }
+        }
+
+        PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> Integer.compare(a[2], b[2]));
+        pq.offer(new int[]{0, 0, grid[0][0]});
+        dist[0][0] = 0;
+
+        while (!pq.isEmpty()) {
+            int[] currNode = pq.poll();
+            int x = currNode[0]; int y = currNode[1]; int minTimeReqToReachCurrNode = currNode[2];
+
+            for (int i = 0; i < 4; i++) {
+                int newX = dirX[i] + x;
+                int newY = dirY[i] + y;
+
+                if (newX < 0 || newX >= n || newY < 0 || newY >= n) continue;
+                if (dist[newX][newY] < dist[x][y]) continue;
+
+                int MinTimeToReachNeighbour = Math.max(grid[newX][newY], dist[x][y]);
+
+                if (dist[newX][newY] > MinTimeToReachNeighbour) {
+
+                    dist[newX][newY] = MinTimeToReachNeighbour;
+                    pq.offer(new int[]{newX, newY, dist[newX][newY]});
+                }
+
+            }
+        }
+        return Math.max(dist[n-1][n-1], grid[0][0]);
     }
 }
