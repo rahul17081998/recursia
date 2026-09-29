@@ -22,6 +22,23 @@ import java.util.PriorityQueue;
  * Input: heights = [[1,2,3],[3,8,4],[5,3,5]]
  * Output: 1
  *
+ * Example 3 (a zero-effort path exists):
+ * Input: heights = [[1,2,1,1,1],[1,2,1,2,1],[1,2,1,2,1],[1,2,1,2,1],[1,1,1,2,1]]
+ * Output: 0
+ * Explanation: Snake down column 0, along the bottom row, up column 2,
+ * along the top row and down column 4 - every cell on it is 1.
+ *
+ * Example 4 (single row - only one path, so every step counts):
+ * Input: heights = [[1,10,6,7,9,10,4,9]]
+ * Output: 9
+ * Explanation: Step differences are 9,4,1,2,1,6,5. Effort is the MAX (9),
+ * not the last step (5). Catches the bug of storing only the current
+ * step's difference instead of max(effortSoFar, stepDiff).
+ *
+ * Example 5 (single cell - start is already the end):
+ * Input: heights = [[3]]
+ * Output: 0
+ *
  * Constraints:
  * - m == heights.length, n == heights[i].length
  * - 1 &lt;= m, n &lt;= 100
