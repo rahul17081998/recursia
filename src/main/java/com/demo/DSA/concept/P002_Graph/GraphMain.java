@@ -1267,7 +1267,13 @@ public class GraphMain {
     private static Stream<Case030> q030Cases() {
         return Stream.of(
                 new Case030("A", new int[][]{{1, 2, 2}, {3, 8, 2}, {5, 3, 5}}, 2),
-                new Case030("B", new int[][]{{1, 2, 3}, {3, 8, 4}, {5, 3, 5}}, 1)
+                new Case030("B", new int[][]{{1, 2, 3}, {3, 8, 4}, {5, 3, 5}}, 1),
+                // zero-effort path exists (winding path of all 1s)
+                new Case030("C", new int[][]{{1, 2, 1, 1, 1}, {1, 2, 1, 2, 1}, {1, 2, 1, 2, 1}, {1, 2, 1, 2, 1}, {1, 1, 1, 2, 1}}, 0),
+                // single row: effort is the MAX step (9), not the last step (5)
+                new Case030("D", new int[][]{{1, 10, 6, 7, 9, 10, 4, 9}}, 9),
+                // single cell: start is already the end
+                new Case030("E", new int[][]{{3}}, 0)
         );
     }
 
