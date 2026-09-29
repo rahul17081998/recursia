@@ -1,5 +1,7 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.PriorityQueue;
+
 /**
  * Q030. Path With Minimum Effort
  * https://leetcode.com/problems/path-with-minimum-effort/
@@ -27,6 +29,8 @@ package com.demo.DSA.concept.P002_Graph;
  * </pre>
  */
 public class Q030_PathWithMinimumEffort {
+    int[] dirX = {1, -1, 0, 0};
+    int[] dirY = {0, 0, 1, -1};
 
     /**
      * @implNote TODO: implement.
@@ -45,7 +49,42 @@ public class Q030_PathWithMinimumEffort {
      * Target Space Complexity: O(m * n) - effort grid plus heap.
      */
     public int minimumEffortPath(int[][] heights) {
-        // TODO: implement
+        int row = heights.length;
+        int col = heights[0].length;
+
+        int[][] dist = new int[row][col];
+        for (int i = 0; i < row; i++) {
+            for (int j = 0; j < col; j++) {
+                dist[i][j] = Integer.MAX_VALUE;
+            }
+        }
+
+        PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> Integer.compare(a[2], b[2]));
+        pq.offer(new int[]{0, 0, 0});
+        dist[0][0] = 0;
+
+        while (!pq.isEmpty()) {
+            int[] currCell = pq.poll();
+            int x = currCell[0]; int y = currCell[1]; int maxHeightDiffUpToCurrCell = currCell[2];
+            if (x == row - 1 && y == col - 1) return maxHeightDiffUpToCurrCell;
+            for (int c = 0; c < 4; c++) {
+                int newX = dirX[c] + x;
+                int newY = dirY[c] + y;
+
+                if (newX < 0 || newX >= row || newY < 0 || newY >= col) continue;
+                int neighbour = heights[newX][newY];
+                int currCellHeight = heights[x][y];
+
+                int NeighbourHeightDiff = Math.abs(neighbour - currCellHeight);
+                int newEffect = Math.max(NeighbourHeightDiff, maxHeightDiffUpToCurrCell);
+
+                if (dist[newX][newY] > newEffect) {
+                    dist[newX][newY] = newEffect;
+                    pq.offer(new int[]{newX, newY, newEffect});
+                }
+            }
+        }
+
         return 0;
     }
 }
