@@ -83,7 +83,7 @@ public class Q030_PathWithMinimumEffort {
         while (!pq.isEmpty()) {
             int[] currCell = pq.poll();
             int x = currCell[0]; int y = currCell[1]; int maxHeightDiffUpToCurrCell = currCell[2];
-            if (x == row - 1 && y == col - 1) return maxHeightDiffUpToCurrCell;
+//            if (x == row - 1 && y == col - 1) return maxHeightDiffUpToCurrCell;
             for (int c = 0; c < 4; c++) {
                 int newX = dirX[c] + x;
                 int newY = dirY[c] + y;
@@ -102,6 +102,6 @@ public class Q030_PathWithMinimumEffort {
             }
         }
 
-        return 0;
+        return dist[row-1][col-1];
     }
 }
