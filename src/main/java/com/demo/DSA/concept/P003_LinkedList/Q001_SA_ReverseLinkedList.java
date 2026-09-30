@@ -67,7 +67,15 @@ public class Q001_SA_ReverseLinkedList {
      * implemented recursively instead).
      */
     public ListNode reverseList(ListNode head) {
-        // TODO: implement
-        return null;
+        ListNode revLLHead = null;
+        ListNode curr = head;
+        while (curr != null) {
+            ListNode temp = curr;
+            curr = curr.next;
+
+            temp.next = revLLHead;
+            revLLHead = temp;
+        }
+        return revLLHead;
     }
 }
