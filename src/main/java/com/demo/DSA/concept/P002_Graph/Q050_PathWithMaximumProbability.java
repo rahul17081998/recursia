@@ -142,6 +142,9 @@ public class Q050_PathWithMaximumProbability {
         double[] probDist = new double[n];
         Arrays.fill(probDist, 0.0);
 
+        // MAX-heap (s2 compared before s1): always process the node with the highest
+        // success probability first - opposite of Dijkstra's usual min-heap, because
+        // here a bigger value is better (we multiply probabilities, not add distances)
         PriorityQueue<NodeCurrState> pq = new PriorityQueue<>((NodeCurrState s1, NodeCurrState s2) -> Double.compare(s2.maxSuccessProbToReachThisNode, s1.maxSuccessProbToReachThisNode));
         pq.offer(new NodeCurrState(src, 1));
         probDist[src] = 1;
