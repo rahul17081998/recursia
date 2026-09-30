@@ -1,5 +1,10 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.PriorityQueue;
+
 /**
  * Q050. Path with Maximum Probability
  * https://leetcode.com/problems/path-with-maximum-probability/
@@ -96,8 +101,66 @@ public class Q050_PathWithMaximumProbability {
      * Target Space Complexity: O(V + E) - adjacency list, prob array, and
      * heap.
      */
+    public static class NodeSuccDetail {
+        int node;
+        double succProb;
+        NodeSuccDetail(int node, double succProb) {
+            this.node = node;
+            this.succProb = succProb;
+        }
+    }
+
+
+    public static class NodeCurrState {
+        int node;
+        double maxSuccessProbToReachThisNode;
+        NodeCurrState(int node, double maxSuccessProbToReachThisNode) {
+            this.node = node;
+            this.maxSuccessProbToReachThisNode = maxSuccessProbToReachThisNode;
+        }
+    }
+
+
     public double maxProbability(int n, int[][] edges, double[] succProb, int start, int end) {
-        // TODO: implement
-        return 0.0;
+        List<List<NodeSuccDetail>> adj = new ArrayList<>();
+        for (int i = 0; i < n; i++) adj.add(new ArrayList<>());
+
+        for (int i = 0; i < edges.length; i++) {
+            int[] edge = edges[i];
+            int u = edge[0];
+            int v = edge[1];
+            adj.get(u).add(new NodeSuccDetail(v, succProb[i]));
+            adj.get(v).add(new NodeSuccDetail(u, succProb[i]));
+        }
+
+        return applyDijkstra(start, end, n, adj);
+
+    }
+
+    private double applyDijkstra(int src, int dest, int n, List<List<NodeSuccDetail>> adj) {
+
+        double[] probDist = new double[n];
+        Arrays.fill(probDist, 0.0);
+
+        PriorityQueue<NodeCurrState> pq = new PriorityQueue<>((NodeCurrState s1, NodeCurrState s2) -> Double.compare(s2.maxSuccessProbToReachThisNode, s1.maxSuccessProbToReachThisNode));
+        pq.offer(new NodeCurrState(src, 1));
+        probDist[src] = 1;
+
+        while (!pq.isEmpty()) {
+            NodeCurrState currNode = pq.poll();
+            int u = currNode.node;
+            if (probDist[u] > currNode.maxSuccessProbToReachThisNode) continue;
+
+            for (NodeSuccDetail neighbour : adj.get(u)) {
+                int v = neighbour.node; double probWt = neighbour.succProb;
+
+                if (probDist[v] < probDist[u] * probWt) {
+                    probDist[v] = probDist[u] * probWt;
+                    pq.offer(new NodeCurrState(v, probDist[v]));
+                }
+            }
+        }
+
+        return probDist[dest];
     }
 }
