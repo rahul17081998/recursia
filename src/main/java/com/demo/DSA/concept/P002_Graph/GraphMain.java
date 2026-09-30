@@ -136,6 +136,7 @@ public class GraphMain {
         questions.put(29, this::q029_FloydWarshallAllPairsShortestPath_all);
         questions.put(30, this::q030_PathWithMinimumEffort_all);
         questions.put(31, this::q031_SwimInRisingWater_all);
+        questions.put(50, this::q050_PathWithMaximumProbability_all); // kept next to the other Dijkstra variants (Q025/Q026/Q030/Q031) in run order
         questions.put(32, this::q032_DisjointSetUnion);
         questions.put(33, this::q033_RedundantConnection_all);
         questions.put(34, this::q034_AccountsMerge_all);
@@ -1332,6 +1333,45 @@ public class GraphMain {
     private void q031_SwimInRisingWater_all() {
         header(Q031_SwimInRisingWater.class);
         assertAll("Q031_SwimInRisingWater", toExecutables(q031Cases(), this::q031_SwimInRisingWater));
+    }
+
+    // =========================================================================
+    // Q050 - Path with Maximum Probability (kept here, next to the other
+    // Dijkstra variants, rather than at the end of the file)
+    // =========================================================================
+
+    private record Case050(String variant, int n, int[][] edges, double[] succProb, int start, int end, double expected) {
+        @Override
+        public String toString() {
+            return "Example " + variant;
+        }
+    }
+
+    private static Stream<Case050> q050Cases() {
+        return Stream.of(
+                new Case050("A", 3, new int[][]{{0, 1}, {1, 2}, {0, 2}}, new double[]{0.5, 0.5, 0.2}, 0, 2, 0.25),
+                new Case050("B", 3, new int[][]{{0, 1}, {1, 2}, {0, 2}}, new double[]{0.5, 0.5, 0.3}, 0, 2, 0.3),
+                // no path between start and end
+                new Case050("C", 3, new int[][]{{0, 1}}, new double[]{0.5}, 0, 2, 0.0),
+                // longer path wins: 0.9^3 = 0.729 beats the direct edge's 0.5
+                new Case050("D", 4, new int[][]{{0, 1}, {1, 2}, {2, 3}, {0, 3}}, new double[]{0.9, 0.9, 0.9, 0.5}, 0, 3, 0.729)
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("q050Cases")
+    void q050_PathWithMaximumProbability(Case050 c) {
+        Q050_PathWithMaximumProbability q = new Q050_PathWithMaximumProbability();
+        System.out.println(c + ": n=" + c.n() + ", edges=" + Arrays.deepToString(c.edges())
+                + ", succProb=" + Arrays.toString(c.succProb()) + ", start=" + c.start() + ", end=" + c.end());
+        double actual = q.maxProbability(c.n(), c.edges(), c.succProb(), c.start(), c.end());
+        System.out.println("maxProbability -> " + actual);
+        assertEquals(c.expected(), actual, 1e-5, c.toString());
+    }
+
+    private void q050_PathWithMaximumProbability_all() {
+        header(Q050_PathWithMaximumProbability.class);
+        assertAll("Q050_PathWithMaximumProbability", toExecutables(q050Cases(), this::q050_PathWithMaximumProbability));
     }
 
     // =========================================================================
