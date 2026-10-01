@@ -54,7 +54,24 @@ public class Q002_ReverseLinkedListII {
      * Target Space Complexity: O(1).
      */
     public ListNode reverseBetween(ListNode head, int left, int right) {
-        // TODO: implement
-        return null;
+        ListNode temp = new ListNode(0);
+        temp.next = head;
+
+        ListNode p1 = temp;
+
+        for (int i = 1; i < left; i++) p1 = p1.next;
+
+        ListNode tailOfRevNode = p1.next;
+        ListNode curr = tailOfRevNode;
+        for (int i = left; i < right; i++) curr = curr.next;
+
+        ListNode p2 = curr.next;
+        curr.next = null;
+        p1.next = null;
+
+        ListNode revHead = new Q001_SA_ReverseLinkedList().reverseList(tailOfRevNode);
+        p1.next = revHead;
+        tailOfRevNode.next = p2;
+        return temp.next;
     }
 }
