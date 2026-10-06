@@ -51,7 +51,28 @@ public class Q005_LinkedListCycleII {
      * Target Space Complexity: O(1).
      */
     public ListNode detectCycle(ListNode head) {
-        // TODO: implement
-        return null;
+        ListNode slow = head;
+        ListNode fast = head;
+        boolean isCycle = false;
+
+        while (slow != null && fast != null && fast.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+            if (slow != null && fast != null && slow == fast) {
+                isCycle = true;
+                break;
+            }
+        }
+
+        if (!isCycle) return null;
+
+        slow = head;
+        while (slow != fast) {
+            slow = slow.next;
+            fast = fast.next;
+        }
+
+
+        return slow;
     }
 }
