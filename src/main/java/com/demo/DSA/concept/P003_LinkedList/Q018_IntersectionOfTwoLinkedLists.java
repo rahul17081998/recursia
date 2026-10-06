@@ -62,6 +62,50 @@ public class Q018_IntersectionOfTwoLinkedLists {
      */
     public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
         // TODO: implement
+        ListNode p1 = headA;
+        ListNode p2 = headB;
+
+        while (p1 != null && p2 != null) {
+            p1 = p1.next;
+            p2 = p2.next;
+        }
+
+        int count = 0;
+        if (p1 != null) {
+            while (p1 != null) {
+                count++;
+                p1 = p1.next;
+            }
+            p1 = headA;
+            while (count > 0) {
+                p1 = p1.next;
+                count--;
+            }
+//            p2 = headB;
+        }
+
+        else if (p2 != null) {
+            while (p2 != null) {
+                count++;
+                p2 = p2.next;
+            }
+            p2 = headB;
+            while (count > 0) {
+                p2 = p2.next;
+                count--;
+            }
+//            p1 = headA;
+        }
+        if (p1 == null) p1 = headA;
+        if (p2 == null) p2 = headB;
+
+        //System.out.println("p=" + p1.val + "  p2=" + p2.val);
+        while (p1 != null && p2 != null) {
+            if (p1 == p2)
+                return p1;
+            p1 = p1.next;
+            p2 = p2.next;
+        }
         return null;
     }
 }
