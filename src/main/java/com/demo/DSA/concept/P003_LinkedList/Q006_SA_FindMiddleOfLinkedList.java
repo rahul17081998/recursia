@@ -61,7 +61,14 @@ public class Q006_SA_FindMiddleOfLinkedList {
      * Target Space Complexity: O(1).
      */
     public ListNode middleNode(ListNode head) {
-        // TODO: implement
-        return null;
+        ListNode slow = head;
+        ListNode fast = head;
+
+        while (slow != null && fast != null) {
+            if (fast.next == null) return slow;
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        return slow;
     }
 }
