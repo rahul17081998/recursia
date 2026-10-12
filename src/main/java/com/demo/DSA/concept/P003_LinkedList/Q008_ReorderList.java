@@ -51,6 +51,29 @@ public class Q008_ReorderList {
      * array/deque first).
      */
     public void reorderList(ListNode head) {
-        // TODO: implement
+        if (head.next == null) return;
+
+        ListNode midNode = new Q006_SA_FindMiddleOfLinkedList().middleNode(head);
+        ListNode curr = head;
+        while (curr.next != midNode) {
+            curr = curr.next;
+        }
+        curr.next = null;
+
+        ListNode revHead = new Q001_SA_ReverseLinkedList().reverseList(midNode);
+
+        ListNode p1 = head;
+        ListNode p2 = revHead;
+
+
+        while (p1 != null && p2 != null) {
+            ListNode next = p1.next;
+            p1.next = p2;
+            p2 = p2.next;
+            if (next == null) break;
+            p1.next.next = next;
+            p1 = next;
+        }
+
     }
 }
