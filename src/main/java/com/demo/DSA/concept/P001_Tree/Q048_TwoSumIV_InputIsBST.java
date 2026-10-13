@@ -1,5 +1,8 @@
 package com.demo.DSA.concept.P001_Tree;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Q048. Two Sum IV - Input is a BST
  * https://leetcode.com/problems/two-sum-iv-input-is-a-bst/
@@ -60,6 +63,21 @@ public class Q048_TwoSumIV_InputIsBST {
      */
     public boolean findTarget(TreeNode root, int k) {
         // TODO: implement
-        return false;
+        Set<Integer> set = new HashSet<>();
+        boolean[] isTwoNodeExist = new boolean[1];
+        solve(root, k, isTwoNodeExist, set);
+        return isTwoNodeExist[0];
+    }
+
+    private void solve(TreeNode root, int k, boolean[] isTwoNodeExist, Set<Integer> set) {
+        if (root == null) return;
+        if (set.contains(k - root.val)) {
+            isTwoNodeExist[0] = true;
+            return;
+        }
+        set.add(root.val);
+        solve(root.left, k, isTwoNodeExist, set);
+
+        solve(root.right, k, isTwoNodeExist, set);
     }
 }
