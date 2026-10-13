@@ -1,5 +1,7 @@
 package com.demo.DSA.concept.P001_Tree;
 
+import java.util.Stack;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,7 +54,26 @@ public class Q016_IterativeInorderTraversal {
      * the tree.
      */
     public List<Integer> inorderTraversalIterative(TreeNode root) {
-        // TODO: implement
-        return new ArrayList<>();
+        Stack<TreeNode> stack = new Stack<>();
+        List<Integer> ans = new ArrayList<>();
+
+        while (root != null) {
+            stack.add(root);
+            root = root.left;
+        }
+
+        while (!stack.isEmpty()) {
+            TreeNode curr = stack.pop();
+            ans.add(curr.val);
+            if (curr.right != null) {
+                curr = curr.right;
+                while (curr != null) {
+                    stack.add(curr);
+                    curr = curr.left;
+                }
+            }
+        }
+
+        return ans;
     }
 }
