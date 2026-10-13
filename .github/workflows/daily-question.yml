@@ -1,0 +1,35 @@
+name: Daily DSA question
+
+# Every day at 8:00 AM IST (02:30 UTC) open one GitHub Issue for an unsolved
+# question, rotating topics. On every push to main, close any daily issue
+# whose question has been solved. Can also be run by hand from the Actions tab.
+on:
+  schedule:
+    - cron: "30 2 * * *"
+  push:
+    branches: [main]
+    paths: ["src/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: daily-question
+  cancel-in-progress: false
+
+jobs:
+  ticket:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Close solved tickets / open today's ticket
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          MODE: ${{ github.event_name == 'push' && 'close-only' || 'daily' }}
+        run: python .github/scripts/daily_question.py
