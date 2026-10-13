@@ -23,6 +23,7 @@ import re
 import sys
 import urllib.error
 import urllib.request
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 REPO = os.environ["GITHUB_REPOSITORY"]          # e.g. rahul17081998/recursia
@@ -229,7 +230,8 @@ def main():
         "",
         MARKER.format(chosen),
     ])
-    title = f"[Daily] {pretty_name(chosen)} ({topic_name})"
+    ist_today = datetime.now(timezone(timedelta(hours=5, minutes=30)))   # date in IST
+    title = f"[Daily · {ist_today:%d %b %Y}] {pretty_name(chosen)} ({topic_name})"
     print(f"Opening: {title}")
     if DRY_RUN:
         print(body)
