@@ -1,6 +1,6 @@
 name: Daily DSA question
 
-# - Every day at 8:00 AM IST (02:30 UTC): close tickets whose tests now pass,
+# - Every day at 7:30 AM IST (02:00 UTC): close tickets whose tests now pass,
 #   then open one new ticket for an unsolved question (topics rotate).
 # - On every push to main that touches src/: run the tests for each open
 #   ticket's question; all pass -> close it, any fail -> comment the failure.
@@ -8,7 +8,7 @@ name: Daily DSA question
 #   type a question (e.g. "P002_Graph/Q031") to just run its tests.
 on:
   schedule:
-    - cron: "30 2 * * *"
+    - cron: "0 2 * * *"
   push:
     branches: [main]
     paths: ["src/**"]
