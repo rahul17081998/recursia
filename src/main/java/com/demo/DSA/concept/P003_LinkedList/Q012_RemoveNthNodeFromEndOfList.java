@@ -49,7 +49,27 @@ public class Q012_RemoveNthNodeFromEndOfList {
      * Target Space Complexity: O(1).
      */
     public ListNode removeNthFromEnd(ListNode head, int n) {
-        // TODO: implement
-        return null;
+        int count = 0;
+        ListNode curr = head;
+        while (curr != null) {
+            count++;
+            curr = curr.next;
+        }
+
+        int nodeDelFromStartPos = count - n;
+        return deleteNodeFromStartPos(head, nodeDelFromStartPos);
+    }
+
+    private ListNode deleteNodeFromStartPos(ListNode head, int pos) {
+        // uses 0-index
+        if (pos == 0) return head.next;
+        int currPos = 0;
+        ListNode curr = head;
+        while (curr != null && currPos != (pos - 1)) {
+            curr = curr.next;
+            currPos++;
+        }
+        curr.next = curr.next.next;
+        return head;
     }
 }
