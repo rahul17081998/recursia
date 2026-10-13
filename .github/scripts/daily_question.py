@@ -210,6 +210,8 @@ def main():
         for f in matches:
             verdict, output = run_question_tests(f)
             print(f"\n##### {f}: {verdict.upper()} #####\n{tail(output, 80)}")
+            last = " | ".join(l for l in tail(output, 6).splitlines() if l.strip())
+            print(f"::notice title={f.stem}: {verdict.upper()}::{last[:900]}")
         return
 
     ensure_labels()
@@ -228,6 +230,7 @@ def main():
         verdict, output = run_question_tests(qfile)
         num = issue["number"]
         print(f"#{num} {qfile.name}: {verdict}")
+        print(f"::notice title=#{num} {qfile.stem}: {verdict.upper()}::see issue comments for details")
         if DRY_RUN:
             continue
         if verdict == "passed":
