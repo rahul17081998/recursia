@@ -231,7 +231,7 @@ def main():
         MARKER.format(chosen),
     ])
     ist_today = datetime.now(timezone(timedelta(hours=5, minutes=30)))   # date in IST
-    title = f"[Daily · {ist_today:%d %b %Y}] {pretty_name(chosen)} ({topic_name})"
+    title = f"[{ist_today:%d %b %Y}] {pretty_name(chosen)} ({topic_name})"
     print(f"Opening: {title}")
     if DRY_RUN:
         print(body)
