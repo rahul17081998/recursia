@@ -279,11 +279,24 @@ def main():
                     return topic, f
         return None, None
 
-    topic, chosen = pick(ever_issued)            # prefer questions never ticketed
+    # One question = one ticket, ever. A question that already has a ticket
+    # (open OR closed) never gets a second one.
+    topic, chosen = pick(ever_issued)            # questions never ticketed
     if chosen is None:
-        topic, chosen = pick(open_issued)        # then re-ticket closed-but-unsolved ones
-    if chosen is None:
-        print("Nothing left to ticket - every question is solved or already has an open issue. 🏁")
+        # Every unsolved question already has a ticket. If one was closed by
+        # hand while still unsolved, REOPEN that same ticket instead of
+        # creating a duplicate.
+        topic, chosen = pick(open_issued)
+        if chosen is None:
+            print("Nothing new to ticket - every unsolved question already has an open ticket. 🏁")
+            return
+        old = next(i for i in issues
+                   if (MARKER_RE.search(i.get("body") or "") or [None, None])[1] == str(chosen))
+        print(f"Reopening #{old['number']} - {chosen.name} is still unsolved")
+        if not DRY_RUN:
+            api("PATCH", f"/repos/{REPO}/issues/{old['number']}", {"state": "open"})
+            api("POST", f"/repos/{REPO}/issues/{old['number']}/comments",
+                {"body": "🔁 Reopened - this question is still unsolved and it's its turn again."})
         return
 
     text = chosen.read_text(encoding="utf-8")
