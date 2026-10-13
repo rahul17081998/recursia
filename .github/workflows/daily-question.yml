@@ -1,8 +1,11 @@
 name: Daily DSA question
 
-# Every day at 8:00 AM IST (02:30 UTC) open one GitHub Issue for an unsolved
-# question, rotating topics. On every push to main, close any daily issue
-# whose question has been solved. Can also be run by hand from the Actions tab.
+# - Every day at 8:00 AM IST (02:30 UTC): close tickets whose tests now pass,
+#   then open one new ticket for an unsolved question (topics rotate).
+# - On every push to main that touches src/: run the tests for each open
+#   ticket's question; all pass -> close it, any fail -> comment the failure.
+# - Manually (Actions tab -> Run workflow): pick "daily", "close-only", or
+#   type a question (e.g. "P002_Graph/Q031") to just run its tests.
 on:
   schedule:
     - cron: "30 2 * * *"
@@ -10,6 +13,16 @@ on:
     branches: [main]
     paths: ["src/**"]
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "daily = close passing tickets + open a new one; close-only = just check open tickets"
+        type: choice
+        options: [daily, close-only]
+        default: daily
+      check_question:
+        description: "Optional: only run the tests for this question, e.g. P002_Graph/Q031 (no tickets touched)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -24,12 +37,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Close solved tickets / open today's ticket
+      - name: Compile and build the test classpath
+        run: |
+          mvn -q -B compile dependency:build-classpath -Dmdep.outputFile=cp.txt
+          echo "TEST_CLASSPATH=target/classes:$(cat cp.txt)" >> "$GITHUB_ENV"
+      - name: Run tests / close resolved tickets / open today's ticket
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          MODE: ${{ github.event_name == 'push' && 'close-only' || 'daily' }}
+          MODE: ${{ github.event_name == 'push' && 'close-only' || inputs.mode || 'daily' }}
+          CHECK_QUESTION: ${{ inputs.check_question }}
         run: python .github/scripts/daily_question.py

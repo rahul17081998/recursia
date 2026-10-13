@@ -3,8 +3,10 @@
 Daily DSA question ticket.
 
 Runs once a day from .github/workflows/daily-question.yml and:
-  1. Closes any open "daily-question" issue whose question has since been
-     solved (its "// TODO: implement" stub is gone from the file).
+  1. For each open "daily-question" issue whose stub has been replaced,
+     runs that question's test cases (`<Topic>Main <qNum>`). All pass ->
+     comment + close. Any fail -> comment the failing output (once per
+     commit) and keep the ticket open.
   2. Opens ONE new issue for an unsolved question, rotating topics each day
      (Tree -> Graph -> LinkedList -> Sorting -> Tree ...), lowest Q number
      first within a topic.
@@ -20,6 +22,7 @@ Only the Python standard library is used, so the workflow needs no installs.
 import json
 import os
 import re
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -145,27 +148,106 @@ def method_signatures(text):
 
 
 # --------------------------------------------------------------------------
+# Running a question's test cases
+# --------------------------------------------------------------------------
+
+SHA = os.environ.get("GITHUB_SHA", "local")
+CLASSPATH = os.environ.get("TEST_CLASSPATH", "")
+RESULT_MARKER = "<!-- daily-question-test-result: {} -->"
+
+
+def main_class_for(qfile):
+    """P002_Graph/Q031_X.java -> com.demo.DSA.concept.P002_Graph.GraphMain"""
+    mains = sorted(qfile.parent.glob("*Main.java"))
+    if not mains:
+        return None
+    pkg = ".".join(qfile.parent.relative_to("src/main/java").parts)
+    return f"{pkg}.{mains[0].stem}"
+
+
+def run_question_tests(qfile):
+    """Runs `<TopicMain> <qNum>` - the CLI the *Main classes already support -
+    and returns ("passed" | "failed" | "no-tests", output)."""
+    main_cls = main_class_for(qfile)
+    if not main_cls or not CLASSPATH:
+        return "no-tests", "No *Main class or classpath available."
+    qnum = q_number(qfile)
+    try:
+        proc = subprocess.run(["java", "-cp", CLASSPATH, main_cls, str(qnum)],
+                              capture_output=True, text=True, timeout=300)
+    except subprocess.TimeoutExpired as e:
+        partial = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+        return "failed", "Timed out after 300 seconds (infinite loop?)\n" + partial
+    out = proc.stdout + proc.stderr
+    if "Skipping unknown question" in out:
+        return "no-tests", out
+    if f"Q{qnum:03d} FAILED" in out or proc.returncode != 0:
+        return "failed", out
+    return "passed", out
+
+
+def tail(text, n=40):
+    lines = [l for l in text.splitlines() if "JAVA_TOOL_OPTIONS" not in l]
+    return "\n".join(lines[-n:]).replace("```", "` ` `")
+
+
+def already_commented(num, key):
+    comments = api("GET", f"/repos/{REPO}/issues/{num}/comments?per_page=100")
+    return any(RESULT_MARKER.format(key) in (c.get("body") or "") for c in comments)
+
+
+# --------------------------------------------------------------------------
 # Main
 # --------------------------------------------------------------------------
 
 def main():
+    check = os.environ.get("CHECK_QUESTION", "").strip()
+    if check:                                    # manual "just run the tests for QXXX" mode
+        matches = [f for t in TOPICS for f in (CONCEPT_DIR / t).glob("Q*.java")
+                   if check.lower() in f.stem.lower() or check.lower() in str(f).lower()]
+        if not matches:
+            sys.exit(f"No question file matches '{check}'")
+        for f in matches:
+            verdict, output = run_question_tests(f)
+            print(f"\n##### {f}: {verdict.upper()} #####\n{tail(output, 80)}")
+        return
+
     ensure_labels()
     issues = all_daily_issues()
     unsolved = unsolved_by_topic()
     unsolved_paths = {str(p) for files in unsolved.values() for p in files}
 
-    # 1) auto-close tickets whose question is now solved
+    # 1) close tickets whose question now PASSES its test cases
     for issue in issues:
         if issue["state"] != "open":
             continue
         m = MARKER_RE.search(issue.get("body") or "")
-        if m and m.group(1) not in unsolved_paths and Path(m.group(1)).exists():
-            print(f"Closing #{issue['number']} - {m.group(1)} is solved")
-            if not DRY_RUN:
-                api("POST", f"/repos/{REPO}/issues/{issue['number']}/comments",
-                    {"body": "Solution pushed - the `TODO` stub is gone. Closing automatically. 🎉"})
-                api("PATCH", f"/repos/{REPO}/issues/{issue['number']}",
-                    {"state": "closed", "state_reason": "completed"})
+        if not m or m.group(1) in unsolved_paths or not Path(m.group(1)).exists():
+            continue                                   # still a stub - nothing to test yet
+        qfile = Path(m.group(1))
+        verdict, output = run_question_tests(qfile)
+        num = issue["number"]
+        print(f"#{num} {qfile.name}: {verdict}")
+        if DRY_RUN:
+            continue
+        if verdict == "passed":
+            api("POST", f"/repos/{REPO}/issues/{num}/comments",
+                {"body": f"✅ All test cases for `{qfile.stem}` passed on commit {SHA[:7]}. "
+                         f"Closing as resolved. 🎉\n\n<details><summary>Test output</summary>\n\n"
+                         f"```text\n{tail(output)}\n```\n</details>"})
+            api("PATCH", f"/repos/{REPO}/issues/{num}",
+                {"state": "closed", "state_reason": "completed"})
+        elif verdict == "failed" and not already_commented(num, SHA):
+            api("POST", f"/repos/{REPO}/issues/{num}/comments",
+                {"body": f"❌ Test cases for `{qfile.stem}` failed on commit {SHA[:7]}. "
+                         f"Keeping this ticket open.\n\n```text\n{tail(output)}\n```\n"
+                         + RESULT_MARKER.format(SHA)})
+        elif verdict == "no-tests" and not already_commented(num, "no-tests"):
+            api("POST", f"/repos/{REPO}/issues/{num}/comments",
+                {"body": f"⚠️ The `TODO` stub is gone, but no test cases are registered for "
+                         f"`{qfile.stem}` in its `*Main` class, so it can't be verified "
+                         f"automatically. Close this ticket yourself when you're happy with it.\n"
+                         + RESULT_MARKER.format("no-tests")})
 
     if os.environ.get("MODE") == "close-only":   # push to main: only close solved tickets
         return
@@ -224,7 +306,7 @@ def main():
         "- [ ] Understand the problem and write the approach",
         "- [ ] Implement the method(s) marked `// TODO: implement`",
         "- [ ] Run the matching test in the topic's `*Main` class",
-        "- [ ] Push the solution (this issue closes itself once the stub is gone)",
+        "- [ ] Push the solution (this issue closes itself once all its test cases pass)",
         "",
         f"_{remaining} other unsolved question(s) left in the repo._",
         "",
