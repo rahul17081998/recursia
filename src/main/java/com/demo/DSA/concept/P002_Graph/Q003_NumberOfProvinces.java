@@ -1,5 +1,10 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+
 /**
  * Q003. Number of Provinces
  * https://leetcode.com/problems/number-of-provinces/
@@ -40,8 +45,47 @@ public class Q003_NumberOfProvinces {
      * <br>
      * Target Space Complexity: O(n) - visited array plus recursion/queue.
      */
+    int[] dirX = {1, -1, 0, 0};
+    int[] dirY = {0, 0, 1, -1};
+
     public int findCircleNum(int[][] isConnected) {
-        // TODO: implement
-        return 0;
+        int n = isConnected.length;
+        List<List<Integer>> adj = new ArrayList<>();
+        for (int i = 0; i < n; i++) adj.add(new ArrayList<>());
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (isConnected[i][j] == 1) {
+                    adj.get(i).add(j);
+
+                }
+            }
+        }
+        boolean[] isVis = new boolean[n];
+
+        int count = 0;
+        for (int i = 0; i < n; i++) {
+            if (!isVis[i]) {
+                markProvinces(i, adj, isVis);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private void markProvinces(int i, List<List<Integer>> adj, boolean[] isVis) {
+        isVis[i] = true;
+        Queue<Integer> q = new LinkedList<>();
+        q.offer(i);
+
+
+        while (!q.isEmpty()) {
+            int node = q.poll();
+            for (Integer neighbour : adj.get(node)) {
+                if (!isVis[neighbour]) {
+                    q.offer(neighbour);
+                    isVis[neighbour] = true;
+                }
+            }
+        }
     }
 }
