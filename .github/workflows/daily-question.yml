@@ -8,7 +8,7 @@ name: Daily DSA question
 #   type a question (e.g. "P002_Graph/Q031") to just run its tests.
 on:
   schedule:
-    - cron: "45 0 * * *"
+    - cron: "30 3 * * *"
   push:
     branches: [main]
     paths: ["src/**"]
