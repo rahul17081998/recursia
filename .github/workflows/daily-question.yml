@@ -1,14 +1,14 @@
 name: Daily DSA question
 
-# - Every day at 7:30 AM IST (02:00 UTC): close tickets whose tests now pass,
-#   then open one new ticket for an unsolved question (topics rotate).
+# - Every day at 9:45 AM IST: cron-job.org calls this workflow's
+#   workflow_dispatch API with mode=daily -> close tickets whose tests now
+#   pass, then open one new ticket for an unsolved question (topics rotate).
+#   (GitHub's own `schedule:` trigger was removed - it fired hours late.)
 # - On every push to main that touches src/: run the tests for each open
 #   ticket's question; all pass -> close it, any fail -> comment the failure.
 # - Manually (Actions tab -> Run workflow): pick "daily", "close-only", or
 #   type a question (e.g. "P002_Graph/Q031") to just run its tests.
 on:
-  schedule:
-    - cron: "30 3 * * *"
   push:
     branches: [main]
     paths: ["src/**"]
