@@ -35,7 +35,7 @@ BRANCH = os.environ.get("DEFAULT_BRANCH", "main")
 DRY_RUN = os.environ.get("DRY_RUN") == "1"
 
 CONCEPT_DIR = Path("src/main/java/com/demo/DSA/concept")
-TOPICS = ["P001_Tree", "P002_Graph", "P003_LinkedList", "P004_Sorting"]
+TOPICS = ["P001_Tree", "P002_Graph", "P003_LinkedList", "P004_Sorting", "P005_TwoPointersSlidingWindow"]
 LABEL = "daily-question"
 MARKER = "<!-- daily-question-file: {} -->"
 MARKER_RE = re.compile(r"<!-- daily-question-file: (.+?) -->")
