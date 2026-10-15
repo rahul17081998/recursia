@@ -25,6 +25,7 @@ import re
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -75,12 +76,28 @@ def all_daily_issues():
         page += 1
 
 
+def ensure_label(name, color):
+    """Create the label if it doesn't exist yet. Checks by exact name, so it
+    keeps working once there are hundreds of daily date labels."""
+    if DRY_RUN:
+        return
+    try:
+        api("GET", f"/repos/{REPO}/labels/{urllib.parse.quote(name, safe='')}")
+    except urllib.error.HTTPError as e:
+        if e.code != 404:
+            raise
+        api("POST", f"/repos/{REPO}/labels", {"name": name, "color": color})
+
+
 def ensure_labels():
-    wanted = {LABEL: "0e8a16"} | {f"topic:{t}": "1d76db" for t in TOPICS}
-    existing = {l["name"] for l in api("GET", f"/repos/{REPO}/labels?per_page=100")}
-    for name, color in wanted.items():
-        if name not in existing and not DRY_RUN:
-            api("POST", f"/repos/{REPO}/labels", {"name": name, "color": color})
+    ensure_label(LABEL, "0e8a16")
+    for t in TOPICS:
+        ensure_label(f"topic:{t}", "1d76db")
+
+
+def date_label(day):
+    # "date:2026-10-15" - year-month-day, so the labels list sorts by date
+    return f"date:{day:%Y-%m-%d}"
 
 
 # --------------------------------------------------------------------------
@@ -111,12 +128,20 @@ def unsolved_by_topic():
 
 
 def pretty_name(path):
-    # Q031_SwimInRisingWater -> "Q031 Swim In Rising Water"; drops the "SA_" tag
+    # Q031_SwimInRisingWater -> "Q031 Swim In Rising Water"; drops the "SA_" tag.
+    # Also splits runs of capitals: "ReverseNodesInKGroup" -> "... K Group".
     stem = path.stem
     num, _, rest = stem.partition("_")
     rest = re.sub(r"^SA_", "", rest)
-    words = re.sub(r"(?<=[a-z0-9])(?=[A-Z])|_", " ", rest).split()
+    words = re.sub(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|_", " ", rest).split()
     return f"{num} {' '.join(words)}"
+
+
+def ticket_title(topic, path):
+    # Jira-style key: P003_LinkedList + Q003_ReverseNodesInKGroup
+    #   -> "TI-P003Q003: Reverse Nodes In K Group"
+    num, _, name = pretty_name(path).partition(" ")
+    return f"TI-{topic.split('_', 1)[0]}{num}: {name}"
 
 
 def problem_text(text):
@@ -256,6 +281,7 @@ def main():
         return
 
     # 2) pick today's question
+    ist_today = datetime.now(timezone(timedelta(hours=5, minutes=30)))   # date in IST
     ever_issued = {MARKER_RE.search(i.get("body") or "").group(1)
                    for i in issues if MARKER_RE.search(i.get("body") or "")}
     open_issued = {MARKER_RE.search(i.get("body") or "").group(1)
@@ -293,8 +319,12 @@ def main():
         old = next(i for i in issues
                    if (MARKER_RE.search(i.get("body") or "") or [None, None])[1] == str(chosen))
         print(f"Reopening #{old['number']} - {chosen.name} is still unsolved")
+        today_label = date_label(ist_today)
+        ensure_label(today_label, "fbca04")
         if not DRY_RUN:
             api("PATCH", f"/repos/{REPO}/issues/{old['number']}", {"state": "open"})
+            api("POST", f"/repos/{REPO}/issues/{old['number']}/labels",
+                {"labels": [today_label]})                 # tag it with today's date too
             api("POST", f"/repos/{REPO}/issues/{old['number']}/comments",
                 {"body": "🔁 Reopened - this question is still unsolved and it's its turn again."})
         return
@@ -328,14 +358,16 @@ def main():
         "",
         MARKER.format(chosen),
     ])
-    ist_today = datetime.now(timezone(timedelta(hours=5, minutes=30)))   # date in IST
-    title = f"[{ist_today:%d %b %Y}] {pretty_name(chosen)} ({topic_name})"
-    print(f"Opening: {title}")
+    title = ticket_title(topic, chosen)
+    today_label = date_label(ist_today)
+    print(f"Opening: {title}  [{today_label}]")
     if DRY_RUN:
         print(body)
         return
+    ensure_label(today_label, "fbca04")
     issue = api("POST", f"/repos/{REPO}/issues",
-                {"title": title, "body": body, "labels": [LABEL, f"topic:{topic}"],
+                {"title": title, "body": body,
+                 "labels": [LABEL, f"topic:{topic}", today_label],
                  "assignees": [REPO.split("/")[0]]})
     print(f"Created {issue['html_url']}")
 
