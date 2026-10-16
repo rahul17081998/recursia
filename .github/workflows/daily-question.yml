@@ -7,7 +7,8 @@ name: Daily DSA question
 # - On every push to main that touches src/: run the tests for each open
 #   ticket's question; all pass -> close it, any fail -> comment the failure.
 # - Manually (Actions tab -> Run workflow): pick "daily", "close-only", or
-#   type a question (e.g. "P002_Graph/Q031") to just run its tests.
+#   type a question (e.g. "P002_Graph/Q031") to just run its tests, or fill
+#   create_for (e.g. "P003Q005") to open a ticket for that exact question.
 on:
   push:
     branches: [main]
@@ -19,6 +20,10 @@ on:
         type: choice
         options: [daily, close-only]
         default: daily
+      create_for:
+        description: "Optional: open a ticket for THIS question, e.g. P003Q005 or P003_LinkedList/Q005 (instead of the next one in rotation)"
+        required: false
+        default: ""
       check_question:
         description: "Optional: only run the tests for this question, e.g. P002_Graph/Q031 (no tickets touched)"
         required: false
@@ -55,4 +60,5 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           MODE: ${{ github.event_name == 'push' && 'close-only' || inputs.mode || 'daily' }}
           CHECK_QUESTION: ${{ inputs.check_question }}
+          CREATE_FOR: ${{ inputs.create_for }}
         run: python .github/scripts/daily_question.py

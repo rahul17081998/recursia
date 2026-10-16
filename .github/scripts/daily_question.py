@@ -280,8 +280,14 @@ def main():
     if os.environ.get("MODE") == "close-only":   # push to main: only close solved tickets
         return
 
-    # 2) pick today's question
     ist_today = datetime.now(timezone(timedelta(hours=5, minutes=30)))   # date in IST
+
+    wanted = os.environ.get("CREATE_FOR", "").strip()
+    if wanted:                                   # manual: ticket for ONE question you pick
+        create_for(wanted, issues, unsolved, unsolved_paths, ist_today)
+        return
+
+    # 2) pick today's question
     ever_issued = {MARKER_RE.search(i.get("body") or "").group(1)
                    for i in issues if MARKER_RE.search(i.get("body") or "")}
     open_issued = {MARKER_RE.search(i.get("body") or "").group(1)
@@ -316,21 +322,67 @@ def main():
         if chosen is None:
             print("Nothing new to ticket - every unsolved question already has an open ticket. 🏁")
             return
-        old = next(i for i in issues
-                   if (MARKER_RE.search(i.get("body") or "") or [None, None])[1] == str(chosen))
-        print(f"Reopening #{old['number']} - {chosen.name} is still unsolved")
-        today_label = date_label(ist_today)
-        ensure_label(today_label, "fbca04")
-        if not DRY_RUN:
-            api("PATCH", f"/repos/{REPO}/issues/{old['number']}", {"state": "open"})
-            api("POST", f"/repos/{REPO}/issues/{old['number']}/labels",
-                {"labels": [today_label]})                 # tag it with today's date too
-            api("POST", f"/repos/{REPO}/issues/{old['number']}/comments",
-                {"body": "🔁 Reopened - this question is still unsolved and it's its turn again."})
+        reopen_ticket(issue_for(issues, chosen), chosen, ist_today,
+                      "🔁 Reopened - this question is still unsolved and it's its turn again.")
         return
 
+    create_ticket(topic, chosen, ist_today, len(unsolved_paths) - 1)
+
+
+def find_question(wanted):
+    """'P003_LinkedList/Q005', 'P003Q005', 'TI-P003Q005: ...', 'p3 q5' -> (topic, file)."""
+    m = re.search(r"P0*(\d+)\D*?Q0*(\d+)", wanted, re.I)
+    if not m:
+        sys.exit(f"::error::Can't read '{wanted}' - use the form P003Q005 or P003_LinkedList/Q005")
+    topic = next((t for t in TOPICS if t.startswith(f"P{int(m.group(1)):03d}_")), None)
+    if topic is None:
+        sys.exit(f"::error::No topic P{int(m.group(1)):03d} in TOPICS {TOPICS}")
+    files = list((CONCEPT_DIR / topic).glob(f"Q{int(m.group(2)):03d}_*.java"))
+    if not files:
+        sys.exit(f"::error::No question Q{int(m.group(2)):03d} in {topic}")
+    return topic, files[0]
+
+
+def create_for(wanted, issues, unsolved, unsolved_paths, ist_today):
+    topic, chosen = find_question(wanted)
+    key = ticket_title(topic, chosen).split(":")[0]
+    old = issue_for(issues, chosen)
+    if str(chosen) not in unsolved_paths:
+        # already solved (no TODO stub) - a ticket would just close again on the next push
+        msg = f"{key} is already solved (no TODO stub left), so no ticket was created."
+        print(msg); print(f"::notice title={key}: already solved::{msg}")
+        return
+    if old and old["state"] == "open":          # never two tickets for one question
+        msg = f"{key} already has an open ticket: #{old['number']}"
+        print(msg); print(f"::notice title={key}: ticket exists::{old['html_url']}")
+        return
+    if old:                                     # closed earlier while still unsolved -> reopen it
+        reopen_ticket(old, chosen, ist_today, "🔁 Reopened on request (Run workflow -> create_for).")
+        print(f"::notice title={key}: reopened::#{old['number']}")
+        return
+    create_ticket(topic, chosen, ist_today, len(unsolved_paths) - 1)
+    print(f"::notice title={key}: created::new ticket opened")
+
+
+def issue_for(issues, qfile):
+    """The (single) ticket ever created for this question file, or None."""
+    return next((i for i in issues
+                 if (MARKER_RE.search(i.get("body") or "") or [None, None])[1] == str(qfile)), None)
+
+
+def reopen_ticket(old, chosen, ist_today, comment):
+    print(f"Reopening #{old['number']} - {chosen.name}")
+    today_label = date_label(ist_today)
+    ensure_label(today_label, "fbca04")
+    if not DRY_RUN:
+        api("PATCH", f"/repos/{REPO}/issues/{old['number']}", {"state": "open"})
+        api("POST", f"/repos/{REPO}/issues/{old['number']}/labels",
+            {"labels": [today_label]})                 # tag it with today's date too
+        api("POST", f"/repos/{REPO}/issues/{old['number']}/comments", {"body": comment})
+
+
+def create_ticket(topic, chosen, ist_today, remaining):
     text = chosen.read_text(encoding="utf-8")
-    remaining = len(unsolved_paths) - 1
     sigs = method_signatures(text)
     file_url = f"https://github.com/{REPO}/blob/{BRANCH}/{chosen}"
     topic_name = topic.split("_", 1)[1]
