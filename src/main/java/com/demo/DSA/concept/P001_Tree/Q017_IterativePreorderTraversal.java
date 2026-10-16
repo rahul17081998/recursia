@@ -2,6 +2,7 @@ package com.demo.DSA.concept.P001_Tree;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 /**
  * Q017. Binary Tree Preorder Traversal (Iterative)
@@ -52,7 +53,17 @@ public class Q017_IterativePreorderTraversal {
      * the tree (O(n) worst case for a skewed tree).
      */
     public List<Integer> preorderTraversalIterative(TreeNode root) {
-        // TODO: implement
-        return new ArrayList<>();
+        Stack<TreeNode> stack = new Stack<>();
+        List<Integer> preOrderList = new ArrayList<>();
+        if(root==null) return preOrderList;
+        stack.add(root);
+
+        while(!stack.isEmpty()){
+            TreeNode currNode = stack.pop();
+            preOrderList.add(currNode.val);
+            if(currNode.right!=null)stack.add(currNode.right);
+            if(currNode.left!=null)stack.add(currNode.left);
+        }
+        return preOrderList;
     }
 }
