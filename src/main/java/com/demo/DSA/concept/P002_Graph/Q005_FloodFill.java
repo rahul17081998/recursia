@@ -1,5 +1,8 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 /**
  * Q005. Flood Fill
  * https://leetcode.com/problems/flood-fill/
@@ -43,8 +46,26 @@ public class Q005_FloodFill {
      * Target Space Complexity: O(m * n) worst case - BFS queue or DFS
      * recursion stack.
      */
+    int[] dirX={1,-1,0,0};
+    int[] dirY={0,0,1,-1};
     public int[][] floodFill(int[][] image, int sr, int sc, int color) {
-        // TODO: implement
+        if(image[sr][sc]==color) return image;
+        int initialColor=image[sr][sc];
+        int n = image.length; int m=image[0].length;
+        Queue<int[]> q = new LinkedList<>();
+        q.offer(new int[]{sr,sc});
+        image[sr][sc]=color;
+
+        while(!q.isEmpty()){
+            int[] pixelLocation =q.poll();
+            for(int i=0; i<4; i++){
+                int x=dirX[i]+pixelLocation[0];
+                int y=dirY[i]+pixelLocation[1];
+                if(x<0 || x>=n || y<0 || y>=m || image[x][y]!=initialColor) continue;
+                image[x][y]=color;
+                q.offer(new int[]{x,y});
+            }
+        }
         return image;
     }
 }
