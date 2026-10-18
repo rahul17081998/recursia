@@ -1,14 +1,15 @@
 name: Daily DSA question
 
-# - Every day at 7:30 AM IST (02:00 UTC): close tickets whose tests now pass,
-#   then open one new ticket for an unsolved question (topics rotate).
+# - Every day at 9:45 AM IST: cron-job.org calls this workflow's
+#   workflow_dispatch API with mode=daily -> close tickets whose tests now
+#   pass, then open one new ticket for an unsolved question (topics rotate).
+#   (GitHub's own `schedule:` trigger was removed - it fired hours late.)
 # - On every push to main that touches src/: run the tests for each open
 #   ticket's question; all pass -> close it, any fail -> comment the failure.
 # - Manually (Actions tab -> Run workflow): pick "daily", "close-only", or
-#   type a question (e.g. "P002_Graph/Q031") to just run its tests.
+#   type a question (e.g. "P002_Graph/Q031") to just run its tests, or fill
+#   create_for (e.g. "P003Q005") to open a ticket for that exact question.
 on:
-  schedule:
-    - cron: "30 3 * * *"
   push:
     branches: [main]
     paths: ["src/**"]
@@ -19,6 +20,10 @@ on:
         type: choice
         options: [daily, close-only]
         default: daily
+      create_for:
+        description: "Optional: open a ticket for THIS question, e.g. P003Q005 or P003_LinkedList/Q005 (instead of the next one in rotation)"
+        required: false
+        default: ""
       check_question:
         description: "Optional: only run the tests for this question, e.g. P002_Graph/Q031 (no tickets touched)"
         required: false
@@ -55,4 +60,5 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           MODE: ${{ github.event_name == 'push' && 'close-only' || inputs.mode || 'daily' }}
           CHECK_QUESTION: ${{ inputs.check_question }}
+          CREATE_FOR: ${{ inputs.create_for }}
         run: python .github/scripts/daily_question.py

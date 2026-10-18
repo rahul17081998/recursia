@@ -57,7 +57,38 @@ public class Q003_ReverseNodesInKGroup {
      * implemented recursively).
      */
     public ListNode reverseKGroup(ListNode head, int k) {
-        // TODO: implement
-        return null;
+        if(k==1) return head;
+        ListNode temp = new ListNode(0);
+        temp.next=head;
+
+
+
+        ListNode curr=head;
+        ListNode joint1=temp;
+        ListNode p1=curr;
+
+        while(curr!=null){
+            int count=0;
+            ListNode p2=p1;
+            while(curr!=null && count!=k){
+                p2=curr;
+                curr=curr.next;
+                count++;
+            }
+            if(count<k) return temp.next;
+            ListNode joint2=curr;
+
+            joint1.next=null;
+            p2.next=null;
+
+            p2 = new Q001_SA_ReverseLinkedList().reverseList(p1);
+            joint1.next=p2;
+            p1.next=joint2;
+
+            joint1=p1;
+            p1=curr;
+        }
+
+        return temp.next;
     }
 }

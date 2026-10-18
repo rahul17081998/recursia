@@ -25,6 +25,7 @@ import re
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -75,12 +76,28 @@ def all_daily_issues():
         page += 1
 
 
+def ensure_label(name, color):
+    """Create the label if it doesn't exist yet. Checks by exact name, so it
+    keeps working once there are hundreds of daily date labels."""
+    if DRY_RUN:
+        return
+    try:
+        api("GET", f"/repos/{REPO}/labels/{urllib.parse.quote(name, safe='')}")
+    except urllib.error.HTTPError as e:
+        if e.code != 404:
+            raise
+        api("POST", f"/repos/{REPO}/labels", {"name": name, "color": color})
+
+
 def ensure_labels():
-    wanted = {LABEL: "0e8a16"} | {f"topic:{t}": "1d76db" for t in TOPICS}
-    existing = {l["name"] for l in api("GET", f"/repos/{REPO}/labels?per_page=100")}
-    for name, color in wanted.items():
-        if name not in existing and not DRY_RUN:
-            api("POST", f"/repos/{REPO}/labels", {"name": name, "color": color})
+    ensure_label(LABEL, "0e8a16")
+    for t in TOPICS:
+        ensure_label(f"topic:{t}", "1d76db")
+
+
+def date_label(day):
+    # "date:2026-10-15" - year-month-day, so the labels list sorts by date
+    return f"date:{day:%Y-%m-%d}"
 
 
 # --------------------------------------------------------------------------
@@ -111,12 +128,20 @@ def unsolved_by_topic():
 
 
 def pretty_name(path):
-    # Q031_SwimInRisingWater -> "Q031 Swim In Rising Water"; drops the "SA_" tag
+    # Q031_SwimInRisingWater -> "Q031 Swim In Rising Water"; drops the "SA_" tag.
+    # Also splits runs of capitals: "ReverseNodesInKGroup" -> "... K Group".
     stem = path.stem
     num, _, rest = stem.partition("_")
     rest = re.sub(r"^SA_", "", rest)
-    words = re.sub(r"(?<=[a-z0-9])(?=[A-Z])|_", " ", rest).split()
+    words = re.sub(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|_", " ", rest).split()
     return f"{num} {' '.join(words)}"
+
+
+def ticket_title(topic, path):
+    # Jira-style key: P003_LinkedList + Q003_ReverseNodesInKGroup
+    #   -> "TI-P003Q003: Reverse Nodes In K Group"
+    num, _, name = pretty_name(path).partition(" ")
+    return f"TI-{topic.split('_', 1)[0]}{num}: {name}"
 
 
 def problem_text(text):
@@ -255,6 +280,13 @@ def main():
     if os.environ.get("MODE") == "close-only":   # push to main: only close solved tickets
         return
 
+    ist_today = datetime.now(timezone(timedelta(hours=5, minutes=30)))   # date in IST
+
+    wanted = os.environ.get("CREATE_FOR", "").strip()
+    if wanted:                                   # manual: ticket for ONE question you pick
+        create_for(wanted, issues, unsolved, unsolved_paths, ist_today)
+        return
+
     # 2) pick today's question
     ever_issued = {MARKER_RE.search(i.get("body") or "").group(1)
                    for i in issues if MARKER_RE.search(i.get("body") or "")}
@@ -290,17 +322,67 @@ def main():
         if chosen is None:
             print("Nothing new to ticket - every unsolved question already has an open ticket. 🏁")
             return
-        old = next(i for i in issues
-                   if (MARKER_RE.search(i.get("body") or "") or [None, None])[1] == str(chosen))
-        print(f"Reopening #{old['number']} - {chosen.name} is still unsolved")
-        if not DRY_RUN:
-            api("PATCH", f"/repos/{REPO}/issues/{old['number']}", {"state": "open"})
-            api("POST", f"/repos/{REPO}/issues/{old['number']}/comments",
-                {"body": "🔁 Reopened - this question is still unsolved and it's its turn again."})
+        reopen_ticket(issue_for(issues, chosen), chosen, ist_today,
+                      "🔁 Reopened - this question is still unsolved and it's its turn again.")
         return
 
+    create_ticket(topic, chosen, ist_today, len(unsolved_paths) - 1)
+
+
+def find_question(wanted):
+    """'P003_LinkedList/Q005', 'P003Q005', 'TI-P003Q005: ...', 'p3 q5' -> (topic, file)."""
+    m = re.search(r"P0*(\d+)\D*?Q0*(\d+)", wanted, re.I)
+    if not m:
+        sys.exit(f"::error::Can't read '{wanted}' - use the form P003Q005 or P003_LinkedList/Q005")
+    topic = next((t for t in TOPICS if t.startswith(f"P{int(m.group(1)):03d}_")), None)
+    if topic is None:
+        sys.exit(f"::error::No topic P{int(m.group(1)):03d} in TOPICS {TOPICS}")
+    files = list((CONCEPT_DIR / topic).glob(f"Q{int(m.group(2)):03d}_*.java"))
+    if not files:
+        sys.exit(f"::error::No question Q{int(m.group(2)):03d} in {topic}")
+    return topic, files[0]
+
+
+def create_for(wanted, issues, unsolved, unsolved_paths, ist_today):
+    topic, chosen = find_question(wanted)
+    key = ticket_title(topic, chosen).split(":")[0]
+    old = issue_for(issues, chosen)
+    if str(chosen) not in unsolved_paths:
+        # already solved (no TODO stub) - a ticket would just close again on the next push
+        msg = f"{key} is already solved (no TODO stub left), so no ticket was created."
+        print(msg); print(f"::notice title={key}: already solved::{msg}")
+        return
+    if old and old["state"] == "open":          # never two tickets for one question
+        msg = f"{key} already has an open ticket: #{old['number']}"
+        print(msg); print(f"::notice title={key}: ticket exists::{old['html_url']}")
+        return
+    if old:                                     # closed earlier while still unsolved -> reopen it
+        reopen_ticket(old, chosen, ist_today, "🔁 Reopened on request (Run workflow -> create_for).")
+        print(f"::notice title={key}: reopened::#{old['number']}")
+        return
+    create_ticket(topic, chosen, ist_today, len(unsolved_paths) - 1)
+    print(f"::notice title={key}: created::new ticket opened")
+
+
+def issue_for(issues, qfile):
+    """The (single) ticket ever created for this question file, or None."""
+    return next((i for i in issues
+                 if (MARKER_RE.search(i.get("body") or "") or [None, None])[1] == str(qfile)), None)
+
+
+def reopen_ticket(old, chosen, ist_today, comment):
+    print(f"Reopening #{old['number']} - {chosen.name}")
+    today_label = date_label(ist_today)
+    ensure_label(today_label, "fbca04")
+    if not DRY_RUN:
+        api("PATCH", f"/repos/{REPO}/issues/{old['number']}", {"state": "open"})
+        api("POST", f"/repos/{REPO}/issues/{old['number']}/labels",
+            {"labels": [today_label]})                 # tag it with today's date too
+        api("POST", f"/repos/{REPO}/issues/{old['number']}/comments", {"body": comment})
+
+
+def create_ticket(topic, chosen, ist_today, remaining):
     text = chosen.read_text(encoding="utf-8")
-    remaining = len(unsolved_paths) - 1
     sigs = method_signatures(text)
     file_url = f"https://github.com/{REPO}/blob/{BRANCH}/{chosen}"
     topic_name = topic.split("_", 1)[1]
@@ -328,14 +410,16 @@ def main():
         "",
         MARKER.format(chosen),
     ])
-    ist_today = datetime.now(timezone(timedelta(hours=5, minutes=30)))   # date in IST
-    title = f"[{ist_today:%d %b %Y}] {pretty_name(chosen)} ({topic_name})"
-    print(f"Opening: {title}")
+    title = ticket_title(topic, chosen)
+    today_label = date_label(ist_today)
+    print(f"Opening: {title}  [{today_label}]")
     if DRY_RUN:
         print(body)
         return
+    ensure_label(today_label, "fbca04")
     issue = api("POST", f"/repos/{REPO}/issues",
-                {"title": title, "body": body, "labels": [LABEL, f"topic:{topic}"],
+                {"title": title, "body": body,
+                 "labels": [LABEL, f"topic:{topic}", today_label],
                  "assignees": [REPO.split("/")[0]]})
     print(f"Created {issue['html_url']}")
 

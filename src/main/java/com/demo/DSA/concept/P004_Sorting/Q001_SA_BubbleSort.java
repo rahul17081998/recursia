@@ -77,7 +77,20 @@ public class Q001_SA_BubbleSort {
      * Target Space Complexity: O(1) - sorts in place.
      */
     public int[] bubbleSort(int[] arr) {
-        // TODO: implement
+        int n= arr.length;
+        for(int c=0; c<n; c++){
+            boolean isSwapNeeded=false;
+            for(int i=0; i<n-1; i++){
+                if(arr[i]>arr[i+1]) {
+                    // swap
+                    int temp = arr[i];
+                    arr[i]=arr[i+1];
+                    arr[i+1]=temp;
+                    isSwapNeeded=true;
+                }
+            }
+            if(!isSwapNeeded) break;
+        }
         return arr;
     }
 }
