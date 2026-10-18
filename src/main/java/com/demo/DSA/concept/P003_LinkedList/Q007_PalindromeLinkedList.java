@@ -48,7 +48,35 @@ public class Q007_PalindromeLinkedList {
      * implemented by simply copying values into an array/list first).
      */
     public boolean isPalindrome(ListNode head) {
-        // TODO: implement
-        return false;
+       ListNode curr1=head;
+       int count=0;
+       while(curr1!=null){
+           count++;
+           curr1=curr1.next;
+       }
+        System.out.println("count="+count);
+       if(count==1) return true;
+
+       int mid=(count+1)/2;
+        curr1=head; // reset curr1
+
+        count=1;
+        while(curr1!=null && count!=mid){
+            count++;
+            curr1=curr1.next;
+        }
+
+        ListNode curr2=curr1.next;
+        curr1.next=null;
+        ListNode revHead = new Q001_SA_ReverseLinkedList().reverseList(curr2);
+
+        curr2=revHead;
+        curr1=head; // reset curr1
+       while(curr1!=null && curr2!=null){
+           if(curr1.val!=curr2.val) return false;
+           curr1=curr1.next;
+           curr2=curr2.next;
+       }
+        return true;
     }
 }
