@@ -308,7 +308,13 @@ public class GraphMain {
                 new Case005("A", new int[][]{{1, 1, 1}, {1, 1, 0}, {1, 0, 1}}, 1, 1, 2,
                         new int[][]{{2, 2, 2}, {2, 2, 0}, {2, 0, 1}}),
                 new Case005("B", new int[][]{{0, 0, 0}, {0, 0, 0}}, 0, 0, 0,
-                        new int[][]{{0, 0, 0}, {0, 0, 0}})
+                        new int[][]{{0, 0, 0}, {0, 0, 0}}),
+                // a different color (3) touching the region is a wall - it must stay 3
+                new Case005("C", new int[][]{{1, 3}, {1, 1}}, 0, 0, 2,
+                        new int[][]{{2, 3}, {2, 2}}),
+                // the original color can be 0 - every connected 0 must be filled
+                new Case005("D", new int[][]{{0, 0}, {0, 0}}, 0, 0, 5,
+                        new int[][]{{5, 5}, {5, 5}})
         );
     }
 
