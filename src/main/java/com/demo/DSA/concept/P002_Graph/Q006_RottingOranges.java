@@ -1,5 +1,8 @@
 package com.demo.DSA.concept.P002_Graph;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 /**
  * Q006. Rotting Oranges
  * https://leetcode.com/problems/rotting-oranges/
@@ -43,7 +46,52 @@ public class Q006_RottingOranges {
      * Target Space Complexity: O(m * n) - BFS queue in the worst case.
      */
     public int orangesRotting(int[][] grid) {
-        // TODO: implement
-        return -1;
+        Queue<int[]> q = new LinkedList<>();
+        int n= grid.length;
+        int m=grid[0].length;
+        for(int i=0; i<n; i++){
+            for(int j=0; j<m; j++){
+                if(grid[i][j]==2){
+                    q.offer(new int[]{i,j});
+                }
+            }
+        }
+        return getMinTimeToRottingAllOranges(q, grid, n, m);
+    }
+
+    private int getMinTimeToRottingAllOranges(Queue<int[]> q, int[][] grid, int n, int m) {
+        int[] dirX={1,-1,0,0};
+        int[] dirY={0,0,1,-1};
+
+        int time=-1;
+
+        while(!q.isEmpty()){
+            int size=q.size();
+            time++;
+            while(size>0){
+                int[] location = q.poll();
+                size--;
+
+                for(int i=0; i<4; i++){
+                    int x =dirX[i]+location[0];
+                    int y =dirY[i]+location[1];
+                    if(x<0 || x>=n || y<0 || y>=m || grid[x][y]!=1) continue;
+                    q.offer(new int[]{x,y});
+                    grid[x][y]=2;
+                }
+            }
+        }
+
+        boolean isAnyFreshOrg=false;
+        for(int i=0; i<n; i++){
+            for(int j=0; j<m; j++){
+                if(grid[i][j]==1){
+                    isAnyFreshOrg=true;
+                    return -1;
+                }
+            }
+        }
+
+        return Math.max(0,time);
     }
 }

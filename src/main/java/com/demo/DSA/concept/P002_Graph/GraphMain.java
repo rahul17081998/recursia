@@ -343,7 +343,11 @@ public class GraphMain {
     private static Stream<Case006> q006Cases() {
         return Stream.of(
                 new Case006("A", new int[][]{{2, 1, 1}, {1, 1, 0}, {0, 1, 1}}, 4),
-                new Case006("B", new int[][]{{2, 1, 1}, {0, 1, 1}, {1, 0, 1}}, -1)
+                new Case006("B", new int[][]{{2, 1, 1}, {0, 1, 1}, {1, 0, 1}}, -1),
+                // no oranges at all - nothing to rot, so 0 minutes (not -1)
+                new Case006("C", new int[][]{{0}}, 0),
+                // a fresh orange but no rotten one to start from - it can never rot
+                new Case006("D", new int[][]{{1}}, -1)
         );
     }
 
