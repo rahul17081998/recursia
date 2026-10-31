@@ -1,7 +1,6 @@
 package com.demo.DSA.concept.P001_Tree;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Q019. Binary Tree Zigzag Level Order Traversal
@@ -54,6 +53,28 @@ public class Q019_ZigzagLevelOrderTraversal {
      */
     public List<List<Integer>> zigzagLevelOrder(TreeNode root) {
         // TODO: implement
-        return new ArrayList<>();
+        List<List<Integer>> ans = new ArrayList<>();
+        if(root==null) return ans;
+        Queue<TreeNode> q = new LinkedList<>();
+        q.offer(root);
+        boolean isLeftToRight=true;
+
+        while(!q.isEmpty()){
+            List<Integer> nodes = new ArrayList<>();
+            int size = q.size();
+            while(size>0){
+                TreeNode curr = q.poll();
+                nodes.add(curr.val);
+                if(curr.left!=null) q.offer(curr.left);
+                if(curr.right!=null) q.offer(curr.right);
+                size--;
+            }
+            if(!isLeftToRight){
+                Collections.reverse(nodes);
+            }
+            isLeftToRight=!isLeftToRight;
+            ans.add(nodes);
+        }
+        return ans;
     }
 }
